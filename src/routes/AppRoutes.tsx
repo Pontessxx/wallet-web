@@ -1,7 +1,9 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
+
+import PrivateLayout from '@/layouts/PrivateLayout'
+import HomeTemplate from '@/templates/HomeTemplate'
 import LoginTemplate from '@/templates/LoginTemplate'
 import SignupTemplate from '@/templates/SignupTemplate'
-import HomeTemplate from '@/templates/HomeTemplate'
 
 
 export function AppRoutes() {
@@ -9,7 +11,9 @@ export function AppRoutes() {
     <Routes>
       <Route path="/" element={<LoginTemplate />} />
       <Route path="/signup" element={<SignupTemplate />} />
-      <Route path="/home" element={<HomeTemplate />} />
+      <Route element={<PrivateLayout />}>
+        <Route path="/home" element={<HomeTemplate />} />
+      </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
