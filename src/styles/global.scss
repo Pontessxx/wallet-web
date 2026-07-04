@@ -1,0 +1,12 @@
+@use 'variables';
+@use 'reset';
+
+// Tema padrão aplicado na raiz
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
