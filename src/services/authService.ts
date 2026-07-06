@@ -1,0 +1,13 @@
+import { publicApi } from '@/api/api';
+import type { AuthResponse, LoginRequest, SignupRequest } from '@/types/auth';
+
+export const authService = {
+  login: async (data: LoginRequest) => {
+    const response = await publicApi.post<AuthResponse>('/auth/v2/login', data);
+    return response.data;
+  },
+  signup: async (data: SignupRequest) => {
+    const response = await publicApi.post<AuthResponse>('/user/v2/create', data);
+    return response.data;
+  },
+};

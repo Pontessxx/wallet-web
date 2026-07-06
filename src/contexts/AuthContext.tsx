@@ -12,27 +12,33 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Roda uma vez quando a app carrega: tenta restaurar sessão do localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
-    const storedToken = localStorage.getItem('token');
+    const storedAccessToken = localStorage.getItem('accessToken');
 
-    if (storedUser && storedToken) {
+    if (storedUser && storedAccessToken) {
       setUser(JSON.parse(storedUser));
     }
 
     setIsLoading(false);
   }, []);
 
-  const login = (userData: User, token: string) => {
+  const login = (userData: User, accessToken: string, expiresIn?: number) => {
     localStorage.setItem('user', JSON.stringify(userData));
-    localStorage.setItem('token', token);
+    localStorage.setItem('accessToken', accessToken);
+
+    if (expiresIn) {
+      const expiresAt = Date.now() + expiresIn * 1000;
+      localStorage.setItem('tokenExpiresAt', String(expiresAt));
+    }
+
     setUser(userData);
   };
 
   const logout = () => {
     localStorage.removeItem('user');
-    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('tokenExpiresAt');
     setUser(null);
   };
 
