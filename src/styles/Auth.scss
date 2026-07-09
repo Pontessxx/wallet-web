@@ -1,0 +1,144 @@
+@use 'variables' as *;
+
+.auth-page {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background-color: $bg;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  background-color: $surface;
+  border: 1px solid $border;
+  border-radius: 16px;
+  padding: 40px 32px;
+  box-shadow: 0 20px 40px -12px $box-shadow;
+
+  &__header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  &__title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: $text;
+    letter-spacing: -0.02em;
+  }
+
+  &__subtitle {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: $text-secondary;
+  }
+
+  &__footer {
+    margin-top: 24px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: $text-secondary;
+  }
+
+  &__redirect-link {
+    cursor: pointer;
+    display: inline;
+    padding: 0;
+    color: $info;
+    font-weight: 600;
+    font-size: inherit;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: $text-secondary;
+  }
+}
+
+.input-field {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid $border;
+  background-color: $surface-hover;
+  color: $text;
+  font-size: 0.95rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+
+  &::placeholder {
+    color: $text-disabled;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $info;
+    background-color: $surface-active;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+  }
+
+  &--error {
+    border-color: $error;
+
+    &:focus {
+      box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.15);
+    }
+  }
+}
+
+.auth-error {
+  font-size: 0.85rem;
+  color: $error;
+  background-color: rgba(248, 113, 113, 0.1);
+  border: 1px solid $error;
+  border-radius: 8px;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.auth-submit {
+  margin-top: 8px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid;
+  background-color: $success;
+  color: $text-inverse;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: filter 0.15s ease, opacity 0.15s ease, transform 0.05s ease;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    background-color: $disabled;
+    border-color: $disabled;
+    color: $text-disabled;
+    cursor: not-allowed;
+  }
+}

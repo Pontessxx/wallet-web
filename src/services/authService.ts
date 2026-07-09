@@ -3,7 +3,11 @@ import type { AuthResponse, LoginRequest, SignupRequest } from '@/types/auth';
 
 export const authService = {
   login: async (data: LoginRequest) => {
-    const response = await publicApi.post<AuthResponse>('/auth/v2/login', data);
+    const response = await publicApi.post<AuthResponse>('/auth/v2/login', data, {
+      headers: {
+        'X-TicketValidation': 'JwtOnly',
+      },
+    });
     return response.data;
   },
   signup: async (data: SignupRequest) => {

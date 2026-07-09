@@ -1,62 +1,122 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { authService } from '@/services/authService';
 import { useAuth } from '@/contexts/AuthContext';
+import { showWarning } from '@/utils/toastHelpers';
+import '@/styles/Auth.scss';
 
 const Login = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
+    const isSubmittingRef = useRef(false);
 
     const navigate = useNavigate();
     const { login } = useAuth();
 
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleLogin = async () => {
+        if (isLoading || isSubmittingRef.current) return;
 
         if (!username.trim() || !password.trim()) {
-            setError('Preencha todos os campos.');
+            showWarning('Preencha todos os campos.');
             return;
         }
 
-        setError('');
+        isSubmittingRef.current = true;
         setIsLoading(true);
 
         try {
-            const response = await authService.login({ username, password });
+            const response = await toast.promise(
+                authService.login({ username, password }),
+                {
+                    loading: 'Entrando...',
+                    success: 'Login realizado com sucesso!',
+                    error: 'Usuário ou senha inválidos.',
+                },
+                { id: 'login-toast' }
+            );
+
             login(response.user, response.accessToken);
             navigate('/home');
         } catch (err) {
-            setError('Usuário ou senha inválidos.');
+            // erro já exibido pelo toast.promise
         } finally {
             setIsLoading(false);
+            isSubmittingRef.current = false;
         }
     }
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            handleLogin();
+        }
+    }
+
+    const handleSignupRedirect = () => {
+        navigate('/signup');
+    }
+
     return (
-        <div>
-            <form onSubmit={handleLogin}>
-                <input
-                    type="text"
-                    placeholder="Usuário"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                />
-                <input
-                    type="password"
-                    placeholder="Senha"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
+        <main className="auth-page">
+            <section className="auth-card">
+                <header className="auth-card__header">
+                    <h1 className="auth-card__title">Bem-vindo</h1>
+                    <p className="auth-card__subtitle">Entre com sua conta</p>
+                </header>
 
-                {error && <p>{error}</p>}
+                <div className="auth-form">
+                    <div className="input-group">
+                        <label htmlFor="username">Usuário</label>
+                        <input
+                            id="username"
+                            className="input-field"
+                            type="text"
+                            autoComplete="username"
+                            placeholder="Usuário"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            disabled={isLoading}
+                        />
+                    </div>
 
-                <button type="submit" disabled={isLoading}>
-                    {isLoading ? 'Entrando...' : 'Entrar'}
-                </button>
-            </form>
-        </div>
+                    <div className="input-group">
+                        <label htmlFor="password">Senha</label>
+                        <input
+                            id="password"
+                            className="input-field"
+                            type="password"
+                            autoComplete="current-password"
+                            placeholder="Senha"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            disabled={isLoading}
+                        />
+                    </div>
+
+                    <button className="auth-submit" type="button" onClick={handleLogin} disabled={isLoading}>
+                        {isLoading ? 'Entrando...' : 'Entrar'}
+                    </button>
+                </div>
+
+                <div className="auth-card__footer">
+                    <p>
+                        Não tem uma conta?{' '}
+                        <span
+                            className="auth-card__redirect-link"
+                            role="button"
+                            tabIndex={0}
+                            onClick={handleSignupRedirect}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSignupRedirect()}
+                        >
+                            Cadastre-se
+                        </span>
+                    </p>
+                </div>
+            </section>
+        </main>
     );
 }
 

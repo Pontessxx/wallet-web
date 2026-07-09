@@ -24,13 +24,17 @@
     --color-info:              #38bdf8;
 
     --color-disabled:          #475569;
+
+    --color-box-shadow:             0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    --color-box-shadow-hover:       0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    --color-box-shadow-active:      0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 // ─── Light Theme ───────────────────────────────────────────────
 [data-theme="light"] {
     /* ─── Fundos ─────────────────────────────────────────────────── */
-    --color-bg:                #ffffff;
-    --color-background:        #ffffff;
+    --color-bg:                #efefef;
+    --color-background:        #eeeeee;
     --color-surface:           #f8fafc;
     --color-surface-hover:     #f1f5f9;
     --color-surface-active:    #e2e8f0;
@@ -52,16 +56,33 @@
     --color-info:              #0ea5e9;
 
     --color-disabled:          #cbd5e1;
+
+    --color-box-shadow:             0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    --color-box-shadow-hover:       0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    --color-box-shadow-active:      0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
 }
 
 // ─── SCSS vars para uso interno nos arquivos .scss ─────────────
 // Use estas quando precisar de valor fixo dentro de mixin/função
 $bg:             var(--color-bg);
 $surface:        var(--color-surface);
+$surface-active: var(--color-surface-active);
+$surface-hover:  var(--color-surface-hover);
+
 $text:           var(--color-text);
+$text-inverse:   var(--color-text-inverse);
 $text-secondary: var(--color-text-secondary);
+$text-disabled:  var(--color-text-disabled);
+
 $border:         var(--color-border);
+$box-shadow:     var(--color-box-shadow);
+$box-shadow-hover: var(--color-box-shadow-hover);
+$box-shadow-active: var(--color-box-shadow-active);
+
 $success:        var(--color-success);
 $warning:        var(--color-warning);
 $error:          var(--color-error);
 $disabled:       var(--color-disabled);
+
+$info:           var(--color-info);
