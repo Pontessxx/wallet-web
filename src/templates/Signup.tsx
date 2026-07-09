@@ -16,6 +16,9 @@ const Signup = () => {
     const navigate = useNavigate();
     const { login } = useAuth();
 
+    const isFormFilled = username.trim() !== '' && password.trim() !== '' && confirmPassword.trim() !== '';
+    const isActive = isFormFilled && !isLoading;
+
     const handleSignup = async () => {
         if (isLoading || isSubmittingRef.current) return;
 
@@ -116,9 +119,15 @@ const Signup = () => {
                         />
                     </div>
 
-                    <button className="auth-submit" type="button" onClick={handleSignup} disabled={isLoading}>
+                    <span
+                        className={`auth-submit ${isActive ? 'auth-submit--active' : ''}`}
+                        role="button"
+                        tabIndex={isActive ? 0 : -1}
+                        onClick={isActive ? handleSignup : undefined}
+                        onKeyDown={(e) => e.key === 'Enter' && isActive && handleSignup()}
+                    >
                         {isLoading ? 'Criando conta...' : 'Cadastrar'}
-                    </button>
+                    </span>
                 </div>
 
                 <div className="auth-card__footer">

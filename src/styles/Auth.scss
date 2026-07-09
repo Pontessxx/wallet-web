@@ -115,30 +115,36 @@
   text-align: center;
 }
 
+// Estado padrão = "desabilitado" (span não tem :disabled nativo, então o
+// cinza é o default e vira verde só com a modifier --active)
 .auth-submit {
   margin-top: 8px;
   width: 100%;
   padding: 12px;
   border-radius: 10px;
-  border: 1px solid;
-  background-color: $success;
-  color: $text-inverse;
+  border: 1px solid $disabled;
+  background-color: $disabled;
+  color: $text-disabled;
   font-weight: 600;
   font-size: 0.95rem;
-  transition: filter 0.15s ease, opacity 0.15s ease, transform 0.05s ease;
+  text-align: center;
+  cursor: not-allowed;
+  user-select: none;
+  transition: filter 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.05s ease;
 
-  &:hover:not(:disabled) {
-    filter: brightness(1.08);
-  }
+  // Aplicado quando todos os campos estão preenchidos e não está em loading
+  &--active {
+    border-color: $success;
+    background-color: $success;
+    color: $text-inverse;
+    cursor: pointer;
 
-  &:active:not(:disabled) {
-    transform: translateY(1px);
-  }
+    &:hover {
+      filter: brightness(1.08);
+    }
 
-  &:disabled {
-    background-color: $disabled;
-    border-color: $disabled;
-    color: $text-disabled;
-    cursor: not-allowed;
+    &:active {
+      transform: translateY(1px);
+    }
   }
 }
