@@ -13,8 +13,8 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    const storedAccessToken = localStorage.getItem('accessToken');
+    const storedUser = sessionStorage.getItem('user');
+    const storedAccessToken = sessionStorage.getItem('accessToken');
 
     if (storedUser && storedAccessToken) {
       setUser(JSON.parse(storedUser));
@@ -24,21 +24,21 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   const login = (userData: User, accessToken: string, expiresIn?: number) => {
-    localStorage.setItem('user', JSON.stringify(userData));
-    localStorage.setItem('accessToken', accessToken);
+    sessionStorage.setItem('user', JSON.stringify(userData));
+    sessionStorage.setItem('accessToken', accessToken);
 
     if (expiresIn) {
       const expiresAt = Date.now() + expiresIn * 1000;
-      localStorage.setItem('tokenExpiresAt', String(expiresAt));
+      sessionStorage.setItem('tokenExpiresAt', String(expiresAt));
     }
 
     setUser(userData);
   };
 
   const logout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('tokenExpiresAt');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('tokenExpiresAt');
     setUser(null);
   };
 

@@ -6,12 +6,12 @@ const ThemeContext = createContext<{ theme: Theme; toggleTheme: () => void } | n
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     const [theme, setTheme] = useState<Theme>(() => {
-        return (localStorage.getItem('theme') as Theme) || 'dark';
+        return (sessionStorage.getItem('theme') as Theme) || 'dark';
     });
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('theme', theme);
+        sessionStorage.setItem('theme', theme);
     }, [theme]);
 
     const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));

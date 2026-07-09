@@ -30,14 +30,28 @@ privateApi.interceptors.request.use((config) => {
   return config;
 });
 
-// Resposta privada
-privateApi.interceptors.response.use(
-  (response) => response,
-  (error) => Promise.reject(error)
-);
-
-// Resposta pública
 publicApi.interceptors.response.use(
   (response) => response,
-  (error) => Promise.reject(error)
+  (error) => {
+    if (axios.isAxiosError(error)) {
+      if (!error.response) {
+        error.message = 'Não foi possível conectar ao servidor.';
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+privateApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error)) {
+      if (!error.response) {
+        error.message = 'Não foi possível conectar ao servidor.';
+      }
+    }
+
+    return Promise.reject(error);
+  }
 );
