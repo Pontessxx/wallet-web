@@ -14,4 +14,7 @@ export const authService = {
     const response = await publicApi.post<AuthResponse>('/user/v2/create', data);
     return response.data;
   },
+  logout: async () => {
+    await publicApi.post('/auth/v2/logout', {}, { withCredentials: true });
+  }
 };

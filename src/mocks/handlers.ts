@@ -7,8 +7,6 @@ export const handlers = [
       password: string;
     };
 
-    console.log('MSW Login:', body);
-
     if (
       body.username === 'admin' &&
       body.password === 'admin'
@@ -17,7 +15,6 @@ export const handlers = [
         accessToken: 'mock-access-token',
         refreshToken: 'mock-refresh-token',
         expiresIn: 3600,
-
         user: {
           id: '3',
           username: 'admin',
@@ -44,5 +41,16 @@ export const handlers = [
       expiresIn: 3600,
       user: body,
     });
+  }),
+
+  http.post('/auth/v2/logout', () => {
+    return HttpResponse.json(
+      {
+        message: 'Logout realizado com sucesso.',
+      },
+      {
+        status: 200,
+      }
+    );
   }),
 ];

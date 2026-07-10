@@ -15,7 +15,6 @@ async function enableMocking() {
     onUnhandledRequest: 'bypass',
   });
 
-  console.log('[MOCK] MSW iniciado');
 }
 
 enableMocking().then(() => {

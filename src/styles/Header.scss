@@ -1,0 +1,84 @@
+@use 'variables' as *;
+
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.5rem;
+    background-color: $surface;
+    border-bottom: 1px solid $border;
+    box-shadow: 0 1px 3px $box-shadow;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+
+    &__brand {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    &__logo {
+        font-size: 1.25rem;
+        color: $info;
+        line-height: 1;
+    }
+
+    &__title {
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: $text;
+        letter-spacing: 0.02em;
+    }
+
+    &__user {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    &__avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        background-color: $surface-active;
+        color: $text;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    &__username {
+        color: $text-secondary;
+        font-size: 0.9rem;
+        font-weight: 500;
+
+        @media (max-width: 480px) {
+            display: none; // some só o avatar em telas pequenas
+        }
+    }
+
+    &__logout {
+        border: 1px solid $border;
+        background-color: transparent;
+        color: $text;
+        font-size: 0.85rem;
+        font-weight: 500;
+        padding: 0.4rem 0.9rem;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+
+        &:hover {
+            background-color: $surface-hover;
+            box-shadow: 0 1px 4px $box-shadow-hover;
+        }
+
+        &:active {
+            background-color: $surface-active;
+            box-shadow: 0 1px 2px $box-shadow-active;
+        }
+    }
+}
