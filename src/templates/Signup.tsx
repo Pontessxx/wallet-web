@@ -48,8 +48,7 @@ const Signup = () => {
             login(
                 response.userId,
                 response.username,
-                response.accessToken,
-                response.expiresIn
+                response.accessToken
             );
             navigate('/home');
         } catch (err) {
