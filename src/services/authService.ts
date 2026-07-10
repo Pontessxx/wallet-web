@@ -1,4 +1,4 @@
-import { publicApi } from '@/api/api';
+import { publicApi, privateApi } from '@/api/api';
 import type { AuthResponse, LoginRequest, SignupRequest } from '@/types/auth';
 
 export const authService = {
@@ -15,6 +15,11 @@ export const authService = {
     return response.data;
   },
   logout: async () => {
-    await publicApi.post('/auth/v2/logout', {}, { withCredentials: true });
-  }
+    await privateApi.delete('/auth/v2/logout', {
+      withCredentials: true,
+      headers: {
+        'X-TicketValidation': 'JwtOnly',
+      },
+    });
+  },
 };

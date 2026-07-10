@@ -45,7 +45,12 @@ const Signup = () => {
                 { id: 'signup-toast' }
             );
 
-            login(response.user, response.accessToken);
+            login(
+                response.userId,
+                response.username,
+                response.accessToken,
+                response.expiresIn
+            );
             navigate('/home');
         } catch (err) {
             // erro já exibido pelo toast.promise

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { User, AuthContextType } from '@/types/auth';
+import { authService } from '@/services/authService'; // ajuste o path conforme seu projeto
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -11,6 +12,7 @@ interface AuthProviderProps {
 const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     const storedUser = sessionStorage.getItem('user');
@@ -23,23 +25,30 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     setIsLoading(false);
   }, []);
 
-  const login = (userData: User, accessToken: string, expiresIn?: number) => {
+  const login = (userId: string, username: string, accessToken: string) => {
+    const userData: User = { id: userId, username };
+
     sessionStorage.setItem('user', JSON.stringify(userData));
     sessionStorage.setItem('accessToken', accessToken);
-
-    if (expiresIn) {
-      const expiresAt = Date.now() + expiresIn * 1000;
-      sessionStorage.setItem('tokenExpiresAt', String(expiresAt));
-    }
-
     setUser(userData);
-  };
 
-  const logout = () => {
-    sessionStorage.removeItem('user');
-    sessionStorage.removeItem('accessToken');
-    sessionStorage.removeItem('tokenExpiresAt');
-    setUser(null);
+  };
+ 
+
+  const logout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error('Erro ao invalidar sessão no backend:', error);
+    } finally {
+      sessionStorage.removeItem('user');
+      sessionStorage.removeItem('accessToken');
+      setUser(null);
+      setIsLoggingOut(false);
+    }
   };
 
   const value: AuthContextType = {
@@ -53,7 +62,6 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Hook customizado pra facilitar o uso nas páginas
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

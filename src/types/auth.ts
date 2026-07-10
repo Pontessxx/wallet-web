@@ -1,13 +1,13 @@
 export interface User {
-    id: string;
-    username: string;
+  id: string;
+  username: string;
 }
 
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (user: User, accessToken: string, expiresIn?: number) => void;
-  logout: () => void;
+  login: (userId: string, username: string, accessToken: string, expiresIn?: number) => void;
+  logout: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -24,8 +24,6 @@ export interface SignupRequest {
 export interface AuthResponse {
   accessToken: string;
   expiresIn: number;
-  user: {
-    id: string;
-    username: string;
-  };
+  userId: string;
+  username: string;
 }
