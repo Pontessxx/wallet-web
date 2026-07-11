@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard,
   Wallet,
@@ -35,7 +35,7 @@ const navSections: NavSection[] = [
     title: 'Principal',
     items: [
       { label: 'Dashboard', icon: <LayoutDashboard size={20} />, href: '/dashboard' },
-      { label: 'Contas', icon: <Wallet size={20} />, href: '/contas' },
+      { label: 'Contas', icon: <Wallet size={20} />, href: '/carteira' },
       { label: 'Transações', icon: <ArrowLeftRight size={20} />, href: '/transacoes' },
       { label: 'Objetivos', icon: <Target size={20} />, href: '/objetivos' },
     ],
@@ -57,6 +57,10 @@ const navSections: NavSection[] = [
   },
 ]
 
+function navLinkClass({ isActive }: { isActive: boolean }) {
+  return isActive ? 'sidebar__link sidebar__link--active' : 'sidebar__link'
+}
+
 function handleActivateKey(e: KeyboardEvent, callback: () => void) {
   if (e.key === 'Enter' || e.key === ' ') {
     e.preventDefault()
@@ -67,11 +71,6 @@ function handleActivateKey(e: KeyboardEvent, callback: () => void) {
 function SideBar() {
   const [collapsed, setCollapsed] = useState(true)
   const { theme, toggleTheme } = useTheme()
-  const location = useLocation()
-
-  function isActive(href: string) {
-    return location.pathname === href
-  }
 
   return (
     <aside className={collapsed ? 'sidebar sidebar--collapsed' : 'sidebar'}>
@@ -109,20 +108,16 @@ function SideBar() {
             <ul className="sidebar__list">
               {section.items.map((item) => (
                 <li key={item.href} className="sidebar__item">
-                  <Link
+                  <NavLink
                     to={item.href}
-                    className={
-                      isActive(item.href)
-                        ? 'sidebar__link sidebar__link--active'
-                        : 'sidebar__link'
-                    }
+                    className={navLinkClass}
                     title={collapsed ? item.label : undefined}
                   >
                     <span className="sidebar__icon">{item.icon}</span>
                     {!collapsed && (
                       <span className="sidebar__label">{item.label}</span>
                     )}
-                  </Link>
+                  </NavLink>
                 </li>
               ))}
             </ul>
@@ -131,20 +126,16 @@ function SideBar() {
       </nav>
 
       <footer className="sidebar__footer">
-        <Link
+        <NavLink
           to="/configuracoes"
-          className={
-            isActive('/configuracoes')
-              ? 'sidebar__link sidebar__link--active'
-              : 'sidebar__link'
-          }
+          className={navLinkClass}
           title={collapsed ? 'Configurações' : undefined}
         >
           <span className="sidebar__icon">
             <Settings size={20} />
           </span>
           {!collapsed && <span className="sidebar__label">Configurações</span>}
-        </Link>
+        </NavLink>
 
         <span
           className="sidebar__link sidebar__link--button"

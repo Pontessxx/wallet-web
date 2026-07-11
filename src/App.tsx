@@ -3,8 +3,10 @@ import AuthProvider from '@/contexts/AuthContext';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import Login from '@/templates/Login';
 import Signup from '@/templates/Signup';
-import Home from '@/templates/Home';
+import Dashboard from '@/templates/Dashboard';
 import AppLayout from '@/templates/AppLayout';
+import Carteira from '@/templates/Carteira';
+import NotFound from '@/templates/NotFound';
 
 function App() {
   return (
@@ -12,8 +14,8 @@ function App() {
       <AuthProvider>
         <Routes>
           {/* Rotas públicas (auth) */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<Login />} caseSensitive />
+          <Route path="/signup" element={<Signup />} caseSensitive />
 
           {/* Rotas protegidas — todas usam o AppLayout */}
           <Route
@@ -23,13 +25,15 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/home" element={<Home />} />
-            {/* futuras páginas logadas, ex: */}
-            {/* <Route path="/transacoes" element={<Transacoes />} /> */}
+            <Route path="/dashboard" element={<Dashboard />} caseSensitive />
+            <Route path="/carteira" element={<Carteira />} caseSensitive />
           </Route>
 
           {/* Rota raiz redireciona */}
-          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+          {/* Qualquer rota não mapeada cai aqui */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

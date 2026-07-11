@@ -12,19 +12,24 @@
   overflow: visible; // deixa o toggle "vazar" um pouco pra fora da borda
 
   &--collapsed {
-    width: 72px;
+      width: 72px;
 
-    .sidebar__label {
-      display: none;
-    }
+      .sidebar__label {
+        display: none;
+      }
 
-    .sidebar__link {
-      width: 40px;
-      height: 40px;
-      padding: 0;
-      margin: 0 auto;
-      justify-content: center;
-    }
+      .sidebar__link {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        margin: 0 auto;
+        justify-content: center;
+      }
+
+      .sidebar__header {
+        justify-content: center;
+        padding: 0;
+      }
   }
 
   &__header {
@@ -34,7 +39,7 @@
     padding: 0 1rem;
     overflow: hidden; // corta o conteúdo interno, não a sidebar toda
   }
-
+   
   &__brand {
     display: flex;
     align-items: center;

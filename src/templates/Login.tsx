@@ -43,10 +43,9 @@ const Login = () => {
             login(
                     response.userId,
                     response.username,
-                    response.accessToken,
-                    response.expiresIn
+                    response.accessToken
                 );
-            navigate('/home');
+            navigate('/dashboard');
         } catch (err) {
             // erro já exibido pelo toast.promise
         } finally {

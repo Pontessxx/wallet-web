@@ -50,7 +50,7 @@ const Signup = () => {
                 response.username,
                 response.accessToken
             );
-            navigate('/home');
+            navigate('/dashboard');
         } catch (err) {
             // erro já exibido pelo toast.promise
         } finally {
