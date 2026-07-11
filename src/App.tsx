@@ -4,6 +4,7 @@ import ProtectedRoute from '@/routes/ProtectedRoute';
 import Login from '@/templates/Login';
 import Signup from '@/templates/Signup';
 import Home from '@/templates/Home';
+import AppLayout from '@/templates/AppLayout';
 
 function App() {
   return (
@@ -14,15 +15,18 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
 
-          {/* Rotas protegidas */}
+          {/* Rotas protegidas — todas usam o AppLayout */}
           <Route
-            path="/home"
             element={
               <ProtectedRoute>
-                <Home />
+                <AppLayout />
               </ProtectedRoute>
             }
-          />
+          >
+            <Route path="/home" element={<Home />} />
+            {/* futuras páginas logadas, ex: */}
+            {/* <Route path="/transacoes" element={<Transacoes />} /> */}
+          </Route>
 
           {/* Rota raiz redireciona */}
           <Route path="/" element={<Navigate to="/home" replace />} />

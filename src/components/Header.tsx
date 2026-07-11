@@ -21,11 +21,6 @@ const Header = () => {
 
     return (
         <header className="app-header">
-            <div className="app-header__brand">
-                <span className="app-header__logo">⬡</span>
-                <span className="app-header__title">Wallet</span>
-            </div>
-
             <div className="app-header__user">
                 <span className="app-header__username">{user?.username}</span>
                 <span className="app-header__avatar">{initials}</span>

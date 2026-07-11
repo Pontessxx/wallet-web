@@ -1,0 +1,23 @@
+@use 'variables' as *;
+
+.app-layout {
+    display: flex;
+    height: 100vh;
+    overflow: hidden; // evita scroll duplicado (body + content)
+
+    &__main {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 0; // evita que filhos com largura fixa estourem o flex
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    &__content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem;
+        background-color: $bg;
+    }
+}

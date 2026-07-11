@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useState, type KeyboardEvent } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
   Wallet,
@@ -57,10 +57,16 @@ const navSections: NavSection[] = [
   },
 ]
 
+function handleActivateKey(e: KeyboardEvent, callback: () => void) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault()
+    callback()
+  }
+}
+
 function SideBar() {
   const [collapsed, setCollapsed] = useState(true)
   const { theme, toggleTheme } = useTheme()
-  const navigate = useNavigate()
   const location = useLocation()
 
   function isActive(href: string) {
@@ -70,23 +76,29 @@ function SideBar() {
   return (
     <aside className={collapsed ? 'sidebar sidebar--collapsed' : 'sidebar'}>
       <header className="sidebar__header">
-        {!collapsed && <span className="sidebar__logo">Menu</span>}
-        <button
-          className="sidebar__toggle"
-          onClick={() => setCollapsed(!collapsed)}
-          aria-label="Recolher menu"
-          type="button"
-        >
-          <ChevronLeft
-            size={18}
-            className={
-              collapsed
-                ? 'sidebar__toggle-icon sidebar__toggle-icon--rotated'
-                : 'sidebar__toggle-icon'
-            }
-          />
-        </button>
+        <div className="sidebar__brand">
+          <span className="sidebar__logo">⬡</span>
+          {!collapsed && <span className="sidebar__title">Wallet</span>}
+        </div>
       </header>
+
+      <span
+        className="sidebar__toggle"
+        role="button"
+        tabIndex={0}
+        onClick={() => setCollapsed(!collapsed)}
+        onKeyDown={(e) => handleActivateKey(e, () => setCollapsed(!collapsed))}
+        aria-label="Recolher menu"
+      >
+        <ChevronLeft
+          size={16}
+          className={
+            collapsed
+              ? 'sidebar__toggle-icon sidebar__toggle-icon--rotated'
+              : 'sidebar__toggle-icon'
+          }
+        />
+      </span>
 
       <nav className="sidebar__nav">
         {navSections.map((section) => (
@@ -97,21 +109,20 @@ function SideBar() {
             <ul className="sidebar__list">
               {section.items.map((item) => (
                 <li key={item.href} className="sidebar__item">
-                  <button
-                    type="button"
+                  <Link
+                    to={item.href}
                     className={
                       isActive(item.href)
                         ? 'sidebar__link sidebar__link--active'
                         : 'sidebar__link'
                     }
-                    onClick={() => navigate(item.href)}
                     title={collapsed ? item.label : undefined}
                   >
                     <span className="sidebar__icon">{item.icon}</span>
                     {!collapsed && (
                       <span className="sidebar__label">{item.label}</span>
                     )}
-                  </button>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -120,26 +131,27 @@ function SideBar() {
       </nav>
 
       <footer className="sidebar__footer">
-        <button
-          type="button"
+        <Link
+          to="/configuracoes"
           className={
             isActive('/configuracoes')
               ? 'sidebar__link sidebar__link--active'
               : 'sidebar__link'
           }
-          onClick={() => navigate('/configuracoes')}
           title={collapsed ? 'Configurações' : undefined}
         >
           <span className="sidebar__icon">
             <Settings size={20} />
           </span>
           {!collapsed && <span className="sidebar__label">Configurações</span>}
-        </button>
+        </Link>
 
-        <button
-          type="button"
+        <span
           className="sidebar__link sidebar__link--button"
+          role="button"
+          tabIndex={0}
           onClick={toggleTheme}
+          onKeyDown={(e) => handleActivateKey(e, toggleTheme)}
         >
           <span className="sidebar__icon">
             {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
@@ -149,7 +161,7 @@ function SideBar() {
               {theme === 'light' ? 'Modo Escuro' : 'Modo Claro'}
             </span>
           )}
-        </button>
+        </span>
       </footer>
     </aside>
   )

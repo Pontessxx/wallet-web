@@ -3,33 +3,15 @@
 .app-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem 1.5rem;
+    justify-content: flex-end; // só sobrou o bloco de user, então empurra pra direita
+    height: $header-height;
+    padding: 0 1.5rem;
     background-color: $surface;
     border-bottom: 1px solid $border;
     box-shadow: 0 1px 3px $box-shadow;
     position: sticky;
     top: 0;
     z-index: 10;
-
-    &__brand {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    &__logo {
-        font-size: 1.25rem;
-        color: $info;
-        line-height: 1;
-    }
-
-    &__title {
-        font-weight: 600;
-        font-size: 1.05rem;
-        color: $text;
-        letter-spacing: 0.02em;
-    }
 
     &__user {
         display: flex;
