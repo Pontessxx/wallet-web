@@ -31,7 +31,7 @@ const Header = () => {
                     onClick={toggleValues}
                     type="button"
                 >
-                    {showValues ? <Eye size={20} /> : <EyeOff size={20} />}
+                    {showValues ? <Eye size={26} /> : <EyeOff size={26} />}
                 </button>
 
                 <span className="app-header__username">

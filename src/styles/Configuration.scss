@@ -1,0 +1,128 @@
+@use 'variables' as *;
+
+.configuration-page {
+  padding: 2rem;
+  color: $text;
+  max-width: 640px;
+  margin: 0 auto;
+
+  &__header {
+    margin-bottom: 1.5rem;
+  }
+
+  &__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $text;
+  }
+}
+
+.configuration-card {
+  background-color: $surface;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 1.25rem;
+  box-shadow: $box-shadow;
+  margin-bottom: 2rem;
+
+  &__field {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid $border;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__label {
+    color: $text-secondary;
+    font-size: 0.9rem;
+  }
+
+  &__value {
+    color: $text;
+    font-weight: 500;
+  }
+}
+
+.configuration-danger {
+  background-color: $surface;
+  border: 1px solid $error;
+  border-radius: 8px;
+  padding: 1.25rem;
+
+  &__title {
+    color: $error;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  &__text {
+    color: $text-secondary;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+
+  &__delete-btn {
+    background-color: $error;
+    color: $text-inverse;
+    border: none;
+    border-radius: 6px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.2s;
+
+    &:hover {
+      filter: brightness(0.9);
+    }
+
+    &:disabled {
+      background-color: $disabled;
+      cursor: not-allowed;
+    }
+  }
+
+  &__confirm {
+    background-color: $surface-hover;
+    border-radius: 6px;
+    padding: 1rem;
+  }
+
+  &__confirm-text {
+    color: $text;
+    margin-bottom: 0.75rem;
+  }
+
+  &__confirm-actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  &__cancel-btn {
+    background-color: transparent;
+    color: $text;
+    border: 1px solid $border;
+    border-radius: 6px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+      background-color: $surface-active;
+    }
+
+    &:disabled {
+      color: $text-disabled;
+      cursor: not-allowed;
+    }
+  }
+
+  &__error {
+    color: $error;
+    font-size: 0.85rem;
+    margin-top: 0.75rem;
+  }
+}

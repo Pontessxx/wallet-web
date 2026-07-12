@@ -87,6 +87,17 @@ const carteiraDb: Record<WalletType, Carteira[]> = {
   ],
 };
 
+// "Banco" em memória de usuários válidos (mock simplificado pro fluxo de senha)
+const userDb: Record<string, { password: string }> = {
+  admin: { password: 'admin' }, // usuário padrão, usado pro resto dos fluxos
+  userChangePass: { password: 'senha123' }, // usuário dedicado só pro fluxo de "esqueci minha senha"
+};
+
+// Códigos de redefinição gerados, por username
+const resetCodeDb: Record<string, { code: string; expiresAt: number }> = {};
+
+const RESET_CODE_TTL_MS = 5 * 60 * 1000; // 5 minutos
+
 export const handlers = [
   http.post('/auth/v2/login', async ({ request }) => {
     const body = (await request.json()) as {
@@ -94,14 +105,16 @@ export const handlers = [
       password: string;
     };
 
-    if (body.username === 'admin' && body.password === 'admin') {
+    const usuario = userDb[body.username];
+
+    if (usuario && usuario.password === body.password) {
       return HttpResponse.json(
         {
           accessToken: 'mock-access-token',
           expiresIn: 3600,
           user: {
-            id: '3',
-            username: 'admin',
+            id: body.username === 'admin' ? '3' : 'mock-user-id',
+            username: body.username,
           },
         },
         {
@@ -196,6 +209,84 @@ export const handlers = [
         },
       }
     );
+  }),
+
+  // ===== Esqueci minha senha =====
+
+  http.post('/auth/v1/reset-code', async ({ request }) => {
+    const body = (await request.json()) as { username: string };
+
+    if (!body.username?.trim()) {
+      return HttpResponse.json(
+        { message: 'Username é obrigatório.' },
+        { status: 400 }
+      );
+    }
+
+    // gera um código numérico de 6 dígitos
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + RESET_CODE_TTL_MS);
+
+    resetCodeDb[body.username] = {
+      code: resetCode,
+      expiresAt: expiresAt.getTime(),
+    };
+
+    return HttpResponse.json({
+      resetCode,
+      expiresAt: expiresAt.toISOString(),
+    });
+  }),
+
+  http.put('/auth/v1/change-password', async ({ request }) => {
+    const body = (await request.json()) as {
+      username: string;
+      resetCode: string;
+      newPassword: string;
+    };
+
+    if (!body.username?.trim() || !body.resetCode?.trim() || !body.newPassword?.trim()) {
+      return HttpResponse.json(
+        { message: 'Username, resetCode e newPassword são obrigatórios.' },
+        { status: 400 }
+      );
+    }
+
+    if (!userDb[body.username]) {
+      return HttpResponse.json(
+        { message: 'Usuário não encontrado.' },
+        { status: 404 }
+      );
+    }
+
+    const stored = resetCodeDb[body.username];
+
+    if (!stored) {
+      return HttpResponse.json(
+        { message: 'Nenhum código de redefinição foi gerado para esse usuário.' },
+        { status: 400 }
+      );
+    }
+
+    if (Date.now() > stored.expiresAt) {
+      delete resetCodeDb[body.username];
+      return HttpResponse.json(
+        { message: 'Código de redefinição expirado.' },
+        { status: 400 }
+      );
+    }
+
+    if (stored.code !== body.resetCode) {
+      return HttpResponse.json(
+        { message: 'Código de redefinição inválido.' },
+        { status: 400 }
+      );
+    }
+
+    userDb[body.username].password = body.newPassword;
+    delete resetCodeDb[body.username];
+
+    return HttpResponse.json({ message: 'Senha atualizada com sucesso.' });
   }),
 
   // ===== Carteira (wallet) =====
