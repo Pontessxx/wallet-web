@@ -13,6 +13,7 @@
     --color-text-secondary:    #cbd5e1;
     --color-text-disabled:     #64748b;
     --color-text-inverse:      #0f172a;
+    --color-edit:              #f8a838;
 
     /* ─── Bordas ─────────────────────────────────────────────────── */
     --color-border:            #334155;
@@ -45,6 +46,7 @@
     --color-text-secondary:    #475569;
     --color-text-disabled:     #94a3b8;
     --color-text-inverse:      #ffffff;
+    --color-edit:              #f8a838;
 
     /* ─── Bordas ─────────────────────────────────────────────────── */
     --color-border:            #e2e8f0;
@@ -74,6 +76,7 @@ $text:           var(--color-text);
 $text-inverse:   var(--color-text-inverse);
 $text-secondary: var(--color-text-secondary);
 $text-disabled:  var(--color-text-disabled);
+$edit: var(--color-edit);
 
 $border:         var(--color-border);
 $box-shadow:     var(--color-box-shadow);

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AuthProvider from '@/contexts/AuthContext';
+import CarteiraProvider from '@/contexts/CarteiraContext';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import Login from '@/templates/Login';
 import Signup from '@/templates/Signup';
@@ -26,7 +27,15 @@ function App() {
             }
           >
             <Route path="/dashboard" element={<Dashboard />} caseSensitive />
-            <Route path="/carteira" element={<Carteira />} caseSensitive />
+            <Route
+                path="/carteira"
+                element={
+                  <CarteiraProvider>
+                    <Carteira />
+                  </CarteiraProvider>
+                }
+                caseSensitive
+              />
           </Route>
 
           {/* Rota raiz redireciona */}

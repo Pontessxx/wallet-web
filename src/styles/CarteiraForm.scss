@@ -1,0 +1,73 @@
+@use 'variables' as *;
+
+.carteira-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 320px;
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  &__label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $text-secondary;
+  }
+
+  &__input,
+  &__select {
+    background: $bg;
+    color: $text;
+    border: 1px solid $border;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9375rem;
+    outline: none;
+    transition: border-color 0.15s ease;
+
+    &:focus {
+      border-color: $info;
+    }
+
+    &::placeholder {
+      color: $text-disabled;
+    }
+  }
+
+  &__select {
+    cursor: pointer;
+  }
+
+  &__error {
+    color: $error;
+    font-size: 0.875rem;
+    margin: 0;
+  }
+
+  &__submit {
+    align-self: flex-end;
+    background: $info;
+    color: $text-inverse;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+
+    &:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+
+    &:disabled {
+      background: $disabled;
+      color: $text-disabled;
+      cursor: not-allowed;
+    }
+  }
+}
