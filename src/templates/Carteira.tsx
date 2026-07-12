@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useState } from 'react'
 import Modal from '@/components/Modal'
 import { useCarteira } from '@/contexts/CarteiraContext'
+import { useDropdownMenu } from '@/hooks/useDropdownMenu'
+import CarteiraTable from '@/components/CarteiraTable'
+import CarteiraActionsMenu from '@/components/CarteiraActionsMenu'
 import type { WalletType } from '@/types/carteira'
 import '@/styles/CarteiraForm.scss'
 import '@/styles/CarteiraTable.scss'
@@ -9,19 +11,14 @@ import '@/styles/CarteiraTable.scss'
 const formatCurrency = (value: number) =>
   value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
-type MenuPosition = { top: number; left: number }
-
 const Carteira = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [nome, setNome] = useState('')
   const [saldoInicial, setSaldoInicial] = useState(0)
   const [tipo, setTipo] = useState<WalletType>('Corrente')
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
-  const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null)
 
-  const menuBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({})
-  const menuRef = useRef<HTMLDivElement | null>(null)
+  const { openId, position, menuRef, registerTriggerRef, toggle, close } = useDropdownMenu()
 
   const {
     carteiras,
@@ -38,35 +35,7 @@ const Carteira = () => {
     fetchSummary('Corrente')
   }, [])
 
-  useEffect(() => {
-    if (!openMenuId) return
-
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node
-      const clickedBtn = menuBtnRefs.current[openMenuId]
-
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(target) &&
-        clickedBtn &&
-        !clickedBtn.contains(target)
-      ) {
-        setOpenMenuId(null)
-      }
-    }
-
-    const handleReposition = () => setOpenMenuId(null)
-
-    document.addEventListener('mousedown', handleClickOutside)
-    window.addEventListener('scroll', handleReposition, true)
-    window.addEventListener('resize', handleReposition)
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-      window.removeEventListener('scroll', handleReposition, true)
-      window.removeEventListener('resize', handleReposition)
-    }
-  }, [openMenuId])
+  const listaCarteiras = carteiras ?? []
 
   const resetForm = () => {
     setNome('')
@@ -91,9 +60,9 @@ const Carteira = () => {
 
     setEditingId(carteira.id)
     setNome(carteira.nome)
-    setSaldoInicial(carteira.saldoInicial) // só exibido; não é enviado na edição
+    setSaldoInicial(carteira.saldoInicial)
     setTipo(carteira.categoria as WalletType)
-    setOpenMenuId(null)
+    close()
     setIsModalOpen(true)
   }
 
@@ -113,32 +82,13 @@ const Carteira = () => {
   }
 
   const handleRemove = async (id: string) => {
-    setOpenMenuId(null)
+    close()
     try {
       await removeCarteira(id, tipo)
     } catch {
       // erro já tratado no context via `error`
     }
   }
-
-  const toggleMenu = (id: string) => {
-    if (openMenuId === id) {
-      setOpenMenuId(null)
-      return
-    }
-
-    const btn = menuBtnRefs.current[id]
-    if (btn) {
-      const rect = btn.getBoundingClientRect()
-      setMenuPosition({
-        top: rect.bottom + 4,
-        left: rect.right - 120,
-      })
-    }
-    setOpenMenuId(id)
-  }
-
-  const listaCarteiras = carteiras ?? []
 
   const totalReceitas = listaCarteiras.reduce((acc, c) => acc + c.receitas, 0)
   const totalDespesas = listaCarteiras.reduce((acc, c) => acc + c.despesas, 0)
@@ -154,51 +104,12 @@ const Carteira = () => {
       </header>
 
       <div className="carteira-table-wrapper">
-        {listaCarteiras.length === 0 ? (
-          <p className="carteira-table__empty">
-            {isLoading ? 'Carregando carteiras...' : 'Nenhuma carteira cadastrada ainda.'}
-          </p>
-        ) : (
-          <table className="carteira-table">
-            <thead>
-              <tr>
-                <th>Descrição</th>
-                <th>Saldo inicial</th>
-                <th>Receitas</th>
-                <th>Despesas</th>
-                <th>Transferências</th>
-                <th>Saldo</th>
-                <th>Previsto</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {listaCarteiras.map((carteira) => (
-                <tr key={carteira.id}>
-                  <td className="carteira-table__desc">{carteira.nome}</td>
-                  <td>{formatCurrency(carteira.saldoInicial)}</td>
-                  <td>{formatCurrency(carteira.receitas)}</td>
-                  <td>{formatCurrency(carteira.despesas)}</td>
-                  <td>{formatCurrency(carteira.transferencias)}</td>
-                  <td className="carteira-table__saldo">{formatCurrency(carteira.saldo)}</td>
-                  <td className="carteira-table__previsto">{formatCurrency(carteira.saldoProjetado)}</td>
-                  <td className="carteira-table__actions">
-                    <button
-                      ref={(el) => {
-                        menuBtnRefs.current[carteira.id] = el
-                      }}
-                      className="carteira-table__menu-btn"
-                      onClick={() => toggleMenu(carteira.id)}
-                      aria-label="Ações"
-                    >
-                      ⋮
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        <CarteiraTable
+          carteiras={listaCarteiras}
+          isLoading={isLoading}
+          registerMenuBtnRef={registerTriggerRef}
+          onToggleMenu={toggle}
+        />
       </div>
 
       <footer className="carteira-page__footer">
@@ -208,19 +119,13 @@ const Carteira = () => {
         <span>Previsto: <strong>{formatCurrency(totalPrevisto)}</strong></span>
       </footer>
 
-      {openMenuId &&
-        menuPosition &&
-        createPortal(
-          <div
-            ref={menuRef}
-            className="carteira-table__menu carteira-table__menu--portal"
-            style={{ top: menuPosition.top, left: menuPosition.left }}
-          >
-            <button onClick={() => handleRemove(openMenuId)}>Remover</button>
-            <button className="carteira-table__edit-btn" onClick={() => handleOpenEdit(openMenuId)}>Editar</button>
-          </div>,
-          document.body
-        )}
+      <CarteiraActionsMenu
+        isOpen={!!openId}
+        position={position}
+        menuRef={menuRef}
+        onRemove={() => openId && handleRemove(openId)}
+        onEdit={() => openId && handleOpenEdit(openId)}
+      />
 
       <Modal
         isOpen={isModalOpen}
