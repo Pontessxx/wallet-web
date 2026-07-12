@@ -127,6 +127,16 @@ const Login = () => {
                             Cadastre-se
                         </span>
                     </p>
+                    <p className="auth-card__forgot-link">
+                        <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => navigate('/forgot-password')}
+                            onKeyDown={(e) => e.key === 'Enter' && navigate('/forgot-password')}
+                        >
+                            Esqueci minha senha
+                        </span>
+                    </p>
                 </div>
             </section>
         </main>

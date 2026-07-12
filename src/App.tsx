@@ -9,6 +9,7 @@ import AppLayout from '@/templates/AppLayout';
 import Carteira from '@/templates/Carteira';
 import NotFound from '@/templates/NotFound';
 import Configuration from './templates/Configuration';
+import ForgotPassword from '@/templates/ForgotPassword';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           {/* Rotas públicas (auth) */}
           <Route path="/login" element={<Login />} caseSensitive />
           <Route path="/signup" element={<Signup />} caseSensitive />
+          <Route path="/forgot-password" element={<ForgotPassword />} caseSensitive />
 
           {/* Rotas protegidas — todas usam o AppLayout */}
           <Route
