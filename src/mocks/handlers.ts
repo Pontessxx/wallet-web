@@ -23,6 +23,13 @@ const getWalletType = (request: Request): WalletType | null => {
   return null;
 };
 
+// Guarda o usuário "logado" no mock, setado no login e limpo no logout/remove
+let loggedInUser: { id: string; username: string } | null = null;
+
+// Helper pra pegar o id mockado a partir do username (mesma regra usada no login)
+const getUserIdFromUsername = (username: string): string =>
+  username === 'admin' ? '3' : 'mock-user-id';
+
 // "Banco" em memória das carteiras, segmentado por tipo
 const carteiraDb: Record<WalletType, Carteira[]> = {
   Corrente: [
@@ -108,14 +115,16 @@ export const handlers = [
     const usuario = userDb[body.username];
 
     if (usuario && usuario.password === body.password) {
+      loggedInUser = {
+        id: getUserIdFromUsername(body.username),
+        username: body.username,
+      };
+
       return HttpResponse.json(
         {
           accessToken: 'mock-access-token',
           expiresIn: 3600,
-          user: {
-            id: body.username === 'admin' ? '3' : 'mock-user-id',
-            username: body.username,
-          },
+          user: loggedInUser,
         },
         {
           headers: {
@@ -287,6 +296,57 @@ export const handlers = [
     delete resetCodeDb[body.username];
 
     return HttpResponse.json({ message: 'Senha atualizada com sucesso.' });
+  }),
+
+  // ===== User =====
+
+  http.get('/user/v1/me', ({ request }) => {
+    const token = getBearerToken(request);
+
+    if (!token || !loggedInUser) {
+      return HttpResponse.json(
+        {
+          type: 'about:blank',
+          title: 'Não autenticado',
+          status: 401,
+          detail: 'Access token ausente ou inválido.',
+          instance: '/user/v1/me',
+        },
+        { status: 401 }
+      );
+    }
+
+    return HttpResponse.json(loggedInUser);
+  }),
+
+  http.delete('/user/v1/remove', ({ request }) => {
+    const token = getBearerToken(request);
+
+    if (!token || !loggedInUser) {
+      return HttpResponse.json(
+        {
+          type: 'about:blank',
+          title: 'Não autenticado',
+          status: 401,
+          detail: 'Access token ausente ou inválido.',
+          instance: '/user/v1/remove',
+        },
+        { status: 401 }
+      );
+    }
+
+    delete userDb[loggedInUser.username];
+    loggedInUser = null;
+
+    return HttpResponse.json(
+      { message: 'Usuário removido com sucesso.' },
+      {
+        status: 200,
+        headers: {
+          'Set-Cookie': `${REFRESH_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`,
+        },
+      }
+    );
   }),
 
   // ===== Carteira (wallet) =====
