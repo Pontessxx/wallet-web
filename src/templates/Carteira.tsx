@@ -8,11 +8,8 @@ import BankCombobox from '@/components/BankCombobox'
 import type { WalletType } from '@/types/carteira'
 import '@/styles/CarteiraForm.scss'
 import '@/styles/CarteiraTable.scss'
+import Money from '@/components/Money'
 
-
-
-const formatCurrency = (value: number) =>
-  value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 const Carteira = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -116,10 +113,10 @@ const Carteira = () => {
       </div>
 
       <footer className="carteira-page__footer">
-        <span>Receitas: <strong  style={{ color: 'var(--color-success)' }}>{formatCurrency(totalReceitas)}</strong></span>
-        <span>Despesas: <strong  style={{ color: 'var(--color-error)' }}>{formatCurrency(totalDespesas)}</strong></span>
-        <span>Saldo: <strong>{formatCurrency(saldoTotal ?? 0)}</strong></span>
-        <span>Previsto: <strong  style={{ color: 'var(--color-edit)' }}>{formatCurrency(totalPrevisto)}</strong></span>
+        <span>Receitas: <strong  style={{ color: 'var(--color-success)' }}> <Money value={totalReceitas} /></strong></span>
+        <span>Despesas: <strong  style={{ color: 'var(--color-error)' }}><Money value={totalDespesas} /></strong></span>
+        <span>Saldo: <strong><Money value={saldoTotal ?? 0} /></strong></span>
+        <span>Previsto: <strong  style={{ color: 'var(--color-edit)' }}><Money value={totalPrevisto} /></strong></span>
       </footer>
 
       <CarteiraActionsMenu

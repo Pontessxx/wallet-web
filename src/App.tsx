@@ -8,6 +8,7 @@ import Dashboard from '@/templates/Dashboard';
 import AppLayout from '@/templates/AppLayout';
 import Carteira from '@/templates/Carteira';
 import NotFound from '@/templates/NotFound';
+import Configuration from './templates/Configuration';
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
                 }
                 caseSensitive
               />
+             <Route path="/configuracoes" element={<Configuration />} caseSensitive />
           </Route>
 
           {/* Rota raiz redireciona */}

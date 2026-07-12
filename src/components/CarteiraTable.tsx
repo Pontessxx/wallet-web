@@ -1,8 +1,6 @@
 import type { Carteira } from '@/types/carteira'
 import BankLogo from '@/components/BankLogo'
-
-const formatCurrency = (value: number) =>
-  value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+import Money from '@/components/Money';
 
 interface CarteiraTableProps {
   carteiras: Carteira[]
@@ -41,12 +39,12 @@ const CarteiraTable = ({ carteiras, isLoading, registerMenuBtnRef, onToggleMenu 
               <BankLogo nome={carteira.nome} size={24} />
               <span>{carteira.nome}</span>
             </td>
-            <td>{formatCurrency(carteira.saldoInicial)}</td>
-            <td>{formatCurrency(carteira.receitas)}</td>
-            <td>{formatCurrency(carteira.despesas)}</td>
-            <td>{formatCurrency(carteira.transferencias)}</td>
-            <td className="carteira-table__saldo">{formatCurrency(carteira.saldo)}</td>
-            <td className="carteira-table__previsto">{formatCurrency(carteira.saldoProjetado)}</td>
+            <td><Money value={carteira.saldoInicial} /></td>
+            <td><Money value={carteira.receitas} /></td>
+            <td><Money value={carteira.despesas} /></td>
+            <td><Money value={carteira.transferencias} /></td>
+            <td className="carteira-table__saldo"><Money value={carteira.saldo} /></td>
+            <td className="carteira-table__previsto"><Money value={carteira.saldoProjetado} /></td>
             <td className="carteira-table__actions">
               <button
                 ref={registerMenuBtnRef(carteira.id)}

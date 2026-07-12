@@ -3,10 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { authService } from "@/services/authService";
 import '@/styles/Header.scss';
+import { Eye, EyeOff } from 'lucide-react';
+import { useVisibility } from '@/contexts/VisibilityContext';
 
 const Header = () => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const { showValues, toggleValues } = useVisibility();
 
     const handleLogout = async () => {
         try {
@@ -22,8 +25,22 @@ const Header = () => {
     return (
         <header className="app-header">
             <div className="app-header__user">
-                <span className="app-header__username">{user?.username}</span>
-                <span className="app-header__avatar">{initials}</span>
+
+                <button
+                    className="app-header__visibility"
+                    onClick={toggleValues}
+                    type="button"
+                >
+                    {showValues ? <Eye size={20} /> : <EyeOff size={20} />}
+                </button>
+
+                <span className="app-header__username">
+                    {user?.username}
+                </span>
+
+                <span className="app-header__avatar">
+                    {initials}
+                </span>
 
                 <button
                     className="app-header__logout"
@@ -32,6 +49,7 @@ const Header = () => {
                 >
                     Sair
                 </button>
+
             </div>
         </header>
     )
