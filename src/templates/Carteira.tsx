@@ -4,9 +4,12 @@ import { useCarteira } from '@/contexts/CarteiraContext'
 import { useDropdownMenu } from '@/hooks/useDropdownMenu'
 import CarteiraTable from '@/components/CarteiraTable'
 import CarteiraActionsMenu from '@/components/CarteiraActionsMenu'
+import BankCombobox from '@/components/BankCombobox'
 import type { WalletType } from '@/types/carteira'
 import '@/styles/CarteiraForm.scss'
 import '@/styles/CarteiraTable.scss'
+
+
 
 const formatCurrency = (value: number) =>
   value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -113,10 +116,10 @@ const Carteira = () => {
       </div>
 
       <footer className="carteira-page__footer">
-        <span>Receitas: <strong>{formatCurrency(totalReceitas)}</strong></span>
-        <span>Despesas: <strong>{formatCurrency(totalDespesas)}</strong></span>
+        <span>Receitas: <strong  style={{ color: 'var(--color-success)' }}>{formatCurrency(totalReceitas)}</strong></span>
+        <span>Despesas: <strong  style={{ color: 'var(--color-error)' }}>{formatCurrency(totalDespesas)}</strong></span>
         <span>Saldo: <strong>{formatCurrency(saldoTotal ?? 0)}</strong></span>
-        <span>Previsto: <strong>{formatCurrency(totalPrevisto)}</strong></span>
+        <span>Previsto: <strong  style={{ color: 'var(--color-edit)' }}>{formatCurrency(totalPrevisto)}</strong></span>
       </footer>
 
       <CarteiraActionsMenu
@@ -134,15 +137,15 @@ const Carteira = () => {
       >
         <div className="carteira-form">
           <div className="carteira-form__field">
-            <label className="carteira-form__label" htmlFor="nome">Nome</label>
-            <input
-              id="nome"
-              className="carteira-form__input"
-              type="text"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              placeholder="Ex: Carteira principal"
-            />
+            <label className="carteira-form__label">Nome</label>
+
+            <div className="carteira-form__input-wrapper">
+              <BankCombobox
+                id="nome"
+                value={nome}
+                onChange={setNome}
+              />
+            </div>
           </div>
 
           <div className="carteira-form__field">

@@ -1,4 +1,5 @@
 import type { Carteira } from '@/types/carteira'
+import BankLogo from '@/components/BankLogo'
 
 const formatCurrency = (value: number) =>
   value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -36,7 +37,10 @@ const CarteiraTable = ({ carteiras, isLoading, registerMenuBtnRef, onToggleMenu 
       <tbody>
         {carteiras.map((carteira) => (
           <tr key={carteira.id}>
-            <td className="carteira-table__desc">{carteira.nome}</td>
+            <td className="carteira-table__desc">
+              <BankLogo nome={carteira.nome} size={24} />
+              <span>{carteira.nome}</span>
+            </td>
             <td>{formatCurrency(carteira.saldoInicial)}</td>
             <td>{formatCurrency(carteira.receitas)}</td>
             <td>{formatCurrency(carteira.despesas)}</td>

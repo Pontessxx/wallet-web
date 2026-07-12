@@ -70,4 +70,23 @@
       cursor: not-allowed;
     }
   }
+  .carteira-form__input-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  .carteira-form__input {
+    width: 100%;
+    padding-right: 48px;
+  }
+
+  .bank-logo {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    pointer-events: none;
+  }
 }
