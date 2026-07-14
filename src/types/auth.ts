@@ -27,3 +27,12 @@ export interface AuthResponse {
   userId: string;
   username: string;
 }
+
+export interface EditUsernameRequest {
+  username: string;
+}
+
+export interface EditPasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}

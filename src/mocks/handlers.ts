@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import type { Carteira, WalletType } from '@/types/carteira';
+import type { Categoria } from '@/types/categoria';
 
 const REFRESH_COOKIE_NAME = 'refreshToken';
 
@@ -93,6 +94,13 @@ const carteiraDb: Record<WalletType, Carteira[]> = {
     },
   ],
 };
+
+// "Banco" em memória das categorias
+let categoriaDb: Categoria[] = [
+  { id: 'cat-mock-1', nome: 'Alimentação' },
+  { id: 'cat-mock-2', nome: 'Transporte' },
+  { id: 'cat-mock-3', nome: 'Lazer' },
+];
 
 // "Banco" em memória de usuários válidos (mock simplificado pro fluxo de senha)
 const userDb: Record<string, { password: string }> = {
@@ -457,5 +465,59 @@ export const handlers = [
       carteiras,
       saldoTotal,
     });
+  }),
+
+  // ===== Categoria (category) =====
+
+  http.get('/category/v2/list', ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    return HttpResponse.json(categoriaDb);
+  }),
+
+  http.post('/category/v2/new', async ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const body = (await request.json()) as { nome: string };
+
+    if (!body.nome?.trim()) {
+      return HttpResponse.json(
+        { message: 'Nome é obrigatório.' },
+        { status: 400 }
+      );
+    }
+
+    const novaCategoria: Categoria = {
+      id: crypto.randomUUID(),
+      nome: body.nome,
+    };
+
+    categoriaDb.push(novaCategoria);
+
+    return HttpResponse.json(novaCategoria, { status: 201 });
+  }),
+
+  http.delete('/category/v2/remove', async ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const body = (await request.json()) as { id: string };
+
+    const index = categoriaDb.findIndex((c) => c.id === body.id);
+    if (index === -1) {
+      return HttpResponse.json({ message: 'Categoria não encontrada.' }, { status: 404 });
+    }
+
+    categoriaDb = categoriaDb.filter((c) => c.id !== body.id);
+
+    return HttpResponse.json({ message: 'Categoria removida com sucesso.' });
   }),
 ];

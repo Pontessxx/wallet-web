@@ -23,12 +23,12 @@ export const authService = {
     });
   },
   requestResetCode: async (data: { username: string }) => {
-    const response = await publicApi.post('/auth/v1/reset-code', data);
+    const response = await publicApi.post('/auth/v2/reset-code', data);
     return response.data;
   },
 
   changePassword: async (data: { username: string; resetCode: string; newPassword: string }) => {
-    const response = await publicApi.put('/auth/v1/change-password', data);
+    const response = await publicApi.put('/auth/v2/change-password', data);
     return response.data;
   },
 };

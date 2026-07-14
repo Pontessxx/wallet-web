@@ -1,0 +1,135 @@
+@use 'variables' as *;
+
+.categoria-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  color: $text;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  &__add-btn {
+    background: $info;
+    color: $text-inverse;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    cursor: pointer;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+}
+
+.categoria-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid $border;
+  border-radius: 8px;
+}
+
+.categoria-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  &__menu--portal {
+    position: fixed;
+    z-index: 1000; // acima de modais, headers, etc.
+  }
+
+  thead {
+    background: $surface;
+
+    th {
+      text-align: left;
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      color: $text-secondary;
+      white-space: nowrap;
+    }
+  }
+
+  tbody {
+    tr {
+      border-top: 1px solid $border;
+
+      &:hover {
+        background: $surface-hover;
+      }
+    }
+
+    td {
+      padding: 0.75rem 1rem;
+      white-space: nowrap;
+    }
+  }
+
+  &__nome {
+    font-weight: 500;
+  }
+
+  &__actions {
+    position: relative;
+    text-align: right;
+  }
+
+  &__menu-btn {
+    background: transparent;
+    border: none;
+    color: $text-secondary;
+    cursor: pointer;
+    font-size: 1.125rem;
+    padding: 0.25rem 0.5rem;
+
+    &:hover {
+      color: $text;
+    }
+  }
+
+  &__menu {
+    position: absolute;
+    right: 0.5rem;
+    top: 100%;
+    background: $surface;
+    border: 1px solid $border;
+    border-radius: 6px;
+    box-shadow: $box-shadow-active;
+    z-index: 10;
+    min-width: 120px;
+
+    button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: none;
+      color: $error;
+      padding: 0.5rem 0.75rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+
+      &:hover {
+        background: $surface-hover;
+      }
+    }
+  }
+}
+
+.categoria-table__empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: $text-secondary;
+  font-size: 0.9375rem;
+}

@@ -10,6 +10,8 @@ import Carteira from '@/templates/Carteira';
 import NotFound from '@/templates/NotFound';
 import Configuration from './templates/Configuration';
 import ForgotPassword from '@/templates/ForgotPassword';
+import CategoriaProvider from '@/contexts/CategoriaContext';
+import Categoria from '@/templates/Categoria';
 
 function App() {
   return (
@@ -39,6 +41,16 @@ function App() {
                 }
                 caseSensitive
               />
+              <Route
+                  path="/categorias"
+                  element={
+                    <CategoriaProvider>
+                      <Categoria />
+                    </CategoriaProvider>
+                  }
+                  caseSensitive
+                />
+
              <Route path="/configuracoes" element={<Configuration />} caseSensitive />
           </Route>
 
