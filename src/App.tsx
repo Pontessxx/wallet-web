@@ -13,6 +13,9 @@ const Dashboard = lazy(() => import('@/templates/Dashboard'));
 const Carteira = lazy(() => import('@/templates/Carteira'));
 const Categoria = lazy(() => import('@/templates/Categoria'));
 const Configuration = lazy(() => import('@/templates/Configuration'));
+const Transaction = lazy(() => import('@/templates/Transaction'));
+const Objetivo = lazy(() => import('@/templates/Objetivo'));
+const OperacaoBolsa = lazy(() => import('@/templates/OperacaoBolsa'));
 const NotFound = lazy(() => import('@/templates/NotFound'));
 
 const routeFallback = <div style={{ padding: '1rem' }}>Carregando...</div>;
@@ -37,6 +40,9 @@ function App() {
               }
             >
               <Route path="/dashboard" element={<Dashboard />} caseSensitive />
+              <Route path="/transacoes" element={<Transaction />} caseSensitive />
+              <Route path="/objetivos" element={<Objetivo />} caseSensitive />
+              <Route path="/operacoes-bolsa" element={<OperacaoBolsa />} caseSensitive />
               <Route
                   path="/carteira"
                   element={

@@ -7,8 +7,8 @@ import {
   Target,
   FileBarChart,
   PieChart,
-  FolderKanban,
   Tag,
+  CandlestickChart,
   Calendar,
   Settings,
   Sun,
@@ -36,8 +36,13 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Dashboard', icon: <LayoutDashboard size={20} />, href: '/dashboard' },
       { label: 'Contas', icon: <Wallet size={20} />, href: '/carteira' },
+    ],
+  },
+  {
+    title: 'Transações',
+    items: [
       { label: 'Transações', icon: <ArrowLeftRight size={20} />, href: '/transacoes' },
-      { label: 'Objetivos', icon: <Target size={20} />, href: '/objetivos' },
+      { label: 'Operações Bolsa', icon: <CandlestickChart size={20} />, href: '/operacoes-bolsa' },
     ],
   },
   {
@@ -50,9 +55,9 @@ const navSections: NavSection[] = [
   {
     title: 'Organização',
     items: [
-      { label: 'Categorias', icon: <FolderKanban size={20} />, href: '/categorias' },
-      { label: 'Tags', icon: <Tag size={20} />, href: '/tags' },
+      { label: 'Categorias', icon: <Tag size={20} />, href: '/categorias' },
       { label: 'Calendário', icon: <Calendar size={20} />, href: '/calendario' },
+      { label: 'Objetivos', icon: <Target size={20} />, href: '/objetivos' },
     ],
   },
 ]
