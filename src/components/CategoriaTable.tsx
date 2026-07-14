@@ -1,4 +1,7 @@
 import type { Categoria } from '@/types/categoria'
+import { getCategoriaIcon, normalizeCategoriaColor } from '@/utils/categoriaVisuals'
+import TableEmptyState from '@/components/TableEmptyState'
+import TableActionsCell from '@/components/TableActionsCell'
 
 interface CategoriaTableProps {
   categorias: Categoria[]
@@ -8,11 +11,17 @@ interface CategoriaTableProps {
 }
 
 const CategoriaTable = ({ categorias, isLoading, registerMenuBtnRef, onToggleMenu }: CategoriaTableProps) => {
-  if (categorias.length === 0) {
+  const hasItems = categorias.length > 0
+
+  if (!hasItems) {
     return (
-      <p className="categoria-table__empty">
-        {isLoading ? 'Carregando categorias...' : 'Nenhuma categoria cadastrada ainda.'}
-      </p>
+      <TableEmptyState
+        hasItems={hasItems}
+        isLoading={isLoading}
+        loadingText="Carregando categorias..."
+        emptyText="Nenhuma categoria cadastrada ainda."
+        className="categoria-table__empty"
+      />
     )
   }
 
@@ -25,21 +34,28 @@ const CategoriaTable = ({ categorias, isLoading, registerMenuBtnRef, onToggleMen
         </tr>
       </thead>
       <tbody>
-        {categorias.map((categoria) => (
-          <tr key={categoria.id}>
-            <td className="categoria-table__nome">{categoria.nome}</td>
-            <td className="categoria-table__actions">
-              <button
-                ref={registerMenuBtnRef(categoria.id)}
-                className="categoria-table__menu-btn"
-                onClick={() => onToggleMenu(categoria.id)}
-                aria-label="Ações"
-              >
-                ⋮
-              </button>
-            </td>
-          </tr>
-        ))}
+        {categorias.map((categoria) => {
+          const Icon = getCategoriaIcon(categoria.iconKey)
+          const color = normalizeCategoriaColor(categoria.colorHex)
+
+          return (
+            <tr key={categoria.id}>
+              <td className="categoria-table__nome">
+                <span className="categoria-table__tag" style={{ borderColor: color }}>
+                  <Icon size={14} color={color} />
+                  <span>{categoria.nome}</span>
+                </span>
+              </td>
+              <TableActionsCell
+                id={categoria.id}
+                registerMenuBtnRef={registerMenuBtnRef}
+                onToggleMenu={onToggleMenu}
+                tdClassName="categoria-table__actions"
+                buttonClassName="categoria-table__menu-btn"
+              />
+            </tr>
+          )
+        })}
       </tbody>
     </table>
   )

@@ -1,6 +1,8 @@
 import type { Carteira } from '@/types/carteira'
 import BankLogo from '@/components/BankLogo'
 import Money from '@/components/Money';
+import TableEmptyState from '@/components/TableEmptyState'
+import TableActionsCell from '@/components/TableActionsCell'
 
 interface CarteiraTableProps {
   carteiras: Carteira[]
@@ -10,11 +12,17 @@ interface CarteiraTableProps {
 }
 
 const CarteiraTable = ({ carteiras, isLoading, registerMenuBtnRef, onToggleMenu }: CarteiraTableProps) => {
-  if (carteiras.length === 0) {
+  const hasItems = carteiras.length > 0
+
+  if (!hasItems) {
     return (
-      <p className="carteira-table__empty">
-        {isLoading ? 'Carregando carteiras...' : 'Nenhuma carteira cadastrada ainda.'}
-      </p>
+      <TableEmptyState
+        hasItems={hasItems}
+        isLoading={isLoading}
+        loadingText="Carregando carteiras..."
+        emptyText="Nenhuma carteira cadastrada ainda."
+        className="carteira-table__empty"
+      />
     )
   }
 
@@ -45,16 +53,13 @@ const CarteiraTable = ({ carteiras, isLoading, registerMenuBtnRef, onToggleMenu 
             <td><Money value={carteira.transferencias} /></td>
             <td className="carteira-table__saldo"><Money value={carteira.saldo} /></td>
             <td className="carteira-table__previsto"><Money value={carteira.saldoProjetado} /></td>
-            <td className="carteira-table__actions">
-              <button
-                ref={registerMenuBtnRef(carteira.id)}
-                className="carteira-table__menu-btn"
-                onClick={() => onToggleMenu(carteira.id)}
-                aria-label="Ações"
-              >
-                ⋮
-              </button>
-            </td>
+            <TableActionsCell
+              id={carteira.id}
+              registerMenuBtnRef={registerMenuBtnRef}
+              onToggleMenu={onToggleMenu}
+              tdClassName="carteira-table__actions"
+              buttonClassName="carteira-table__menu-btn"
+            />
           </tr>
         ))}
       </tbody>

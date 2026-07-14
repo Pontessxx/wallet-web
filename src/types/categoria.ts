@@ -1,10 +1,16 @@
+export type CategoriaIconKey = string;
+
 export interface Categoria {
   id: string;
   nome: string;
+  iconKey: CategoriaIconKey;
+  colorHex: string;
 }
 
 export interface CreateCategoriaRequest {
   nome: string;
+  iconKey?: CategoriaIconKey;
+  colorHex?: string;
 }
 
 export interface CategoriaContextType {

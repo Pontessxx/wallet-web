@@ -5,6 +5,7 @@ import { useDropdownMenu } from '@/hooks/useDropdownMenu'
 import CarteiraTable from '@/components/CarteiraTable'
 import CarteiraActionsMenu from '@/components/CarteiraActionsMenu'
 import BankCombobox from '@/components/BankCombobox'
+import TableShell from '@/components/TableShell'
 import type { WalletType } from '@/types/carteira'
 import '@/styles/CarteiraForm.scss'
 import '@/styles/CarteiraTable.scss'
@@ -103,14 +104,14 @@ const Carteira = () => {
         </button>
       </header>
 
-      <div className="carteira-table-wrapper">
+      <TableShell>
         <CarteiraTable
           carteiras={listaCarteiras}
           isLoading={isLoading}
           registerMenuBtnRef={registerTriggerRef}
           onToggleMenu={toggle}
         />
-      </div>
+      </TableShell>
 
       <footer className="carteira-page__footer">
         <span>Receitas: <strong  style={{ color: 'var(--color-success)' }}> <Money value={totalReceitas} /></strong></span>

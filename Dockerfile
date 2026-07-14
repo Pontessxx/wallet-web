@@ -5,6 +5,9 @@ WORKDIR /app
 ARG VITE_API_URL=/api
 ENV VITE_API_URL=${VITE_API_URL}
 
+ARG VITE_ENABLE_MSW=false
+ENV VITE_ENABLE_MSW=${VITE_ENABLE_MSW}
+
 COPY package*.json ./
 RUN npm install
 

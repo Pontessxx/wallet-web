@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import type { Carteira, WalletType } from '@/types/carteira';
-import type { Categoria } from '@/types/categoria';
+import type { Categoria, CategoriaIconKey } from '@/types/categoria';
 
 const REFRESH_COOKIE_NAME = 'refreshToken';
 
@@ -96,10 +96,42 @@ const carteiraDb: Record<WalletType, Carteira[]> = {
 };
 
 // "Banco" em memória das categorias
+const DEFAULT_CATEGORIA_ICON: CategoriaIconKey = 'tag';
+const DEFAULT_CATEGORIA_COLOR = '#64748B';
+const ICON_KEY_ALLOWLIST: CategoriaIconKey[] = [
+  'tag',
+  'shopping-cart',
+  'car',
+  'house',
+  'briefcase',
+  'heart-pulse',
+  'book-open',
+  'gamepad-2',
+  'plane',
+  'utensils',
+];
+
+const COLOR_HEX_REGEX = /^#[0-9A-Fa-f]{6}$/;
+
 let categoriaDb: Categoria[] = [
-  { id: 'cat-mock-1', nome: 'Alimentação' },
-  { id: 'cat-mock-2', nome: 'Transporte' },
-  { id: 'cat-mock-3', nome: 'Lazer' },
+  {
+    id: 'cat-mock-1',
+    nome: 'Alimentação',
+    iconKey: 'utensils',
+    colorHex: '#F97316',
+  },
+  {
+    id: 'cat-mock-2',
+    nome: 'Transporte',
+    iconKey: 'car',
+    colorHex: '#3B82F6',
+  },
+  {
+    id: 'cat-mock-3',
+    nome: 'Lazer',
+    iconKey: 'gamepad-2',
+    colorHex: '#8B5CF6',
+  },
 ];
 
 // "Banco" em memória de usuários válidos (mock simplificado pro fluxo de senha)
@@ -475,7 +507,7 @@ export const handlers = [
       return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
     }
 
-    return HttpResponse.json(categoriaDb);
+    return HttpResponse.json({ categorias: categoriaDb });
   }),
 
   http.post('/category/v2/new', async ({ request }) => {
@@ -484,7 +516,11 @@ export const handlers = [
       return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
     }
 
-    const body = (await request.json()) as { nome: string };
+    const body = (await request.json()) as {
+      nome: string;
+      iconKey?: CategoriaIconKey;
+      colorHex?: string;
+    };
 
     if (!body.nome?.trim()) {
       return HttpResponse.json(
@@ -493,9 +529,25 @@ export const handlers = [
       );
     }
 
+    if (body.iconKey && !ICON_KEY_ALLOWLIST.includes(body.iconKey)) {
+      return HttpResponse.json(
+        { message: 'Ícone inválido.' },
+        { status: 400 }
+      );
+    }
+
+    if (body.colorHex && !COLOR_HEX_REGEX.test(body.colorHex)) {
+      return HttpResponse.json(
+        { message: 'Cor inválida. Use o formato #RRGGBB.' },
+        { status: 400 }
+      );
+    }
+
     const novaCategoria: Categoria = {
       id: crypto.randomUUID(),
-      nome: body.nome,
+      nome: body.nome.trim(),
+      iconKey: body.iconKey ?? DEFAULT_CATEGORIA_ICON,
+      colorHex: body.colorHex ?? DEFAULT_CATEGORIA_COLOR,
     };
 
     categoriaDb.push(novaCategoria);
@@ -509,14 +561,22 @@ export const handlers = [
       return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
     }
 
-    const body = (await request.json()) as { id: string };
+    const url = new URL(request.url);
+    const id = url.searchParams.get('id');
 
-    const index = categoriaDb.findIndex((c) => c.id === body.id);
+    if (!id) {
+      return HttpResponse.json(
+        { message: 'Id da categoria é obrigatório.' },
+        { status: 400 }
+      );
+    }
+
+    const index = categoriaDb.findIndex((c) => c.id === id);
     if (index === -1) {
       return HttpResponse.json({ message: 'Categoria não encontrada.' }, { status: 404 });
     }
 
-    categoriaDb = categoriaDb.filter((c) => c.id !== body.id);
+    categoriaDb = categoriaDb.filter((c) => c.id !== id);
 
     return HttpResponse.json({ message: 'Categoria removida com sucesso.' });
   }),

@@ -1,65 +1,71 @@
+import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AuthProvider from '@/contexts/AuthContext';
 import CarteiraProvider from '@/contexts/CarteiraContext';
 import ProtectedRoute from '@/routes/ProtectedRoute';
-import Login from '@/templates/Login';
-import Signup from '@/templates/Signup';
-import Dashboard from '@/templates/Dashboard';
-import AppLayout from '@/templates/AppLayout';
-import Carteira from '@/templates/Carteira';
-import NotFound from '@/templates/NotFound';
-import Configuration from './templates/Configuration';
-import ForgotPassword from '@/templates/ForgotPassword';
 import CategoriaProvider from '@/contexts/CategoriaContext';
-import Categoria from '@/templates/Categoria';
+
+const Login = lazy(() => import('@/templates/Login'));
+const Signup = lazy(() => import('@/templates/Signup'));
+const ForgotPassword = lazy(() => import('@/templates/ForgotPassword'));
+const ProtectedLayout = lazy(() => import('@/templates/AppLayout'));
+const Dashboard = lazy(() => import('@/templates/Dashboard'));
+const Carteira = lazy(() => import('@/templates/Carteira'));
+const Categoria = lazy(() => import('@/templates/Categoria'));
+const Configuration = lazy(() => import('@/templates/Configuration'));
+const NotFound = lazy(() => import('@/templates/NotFound'));
+
+const routeFallback = <div style={{ padding: '1rem' }}>Carregando...</div>;
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          {/* Rotas públicas (auth) */}
-          <Route path="/login" element={<Login />} caseSensitive />
-          <Route path="/signup" element={<Signup />} caseSensitive />
-          <Route path="/forgot-password" element={<ForgotPassword />} caseSensitive />
+        <Suspense fallback={routeFallback}>
+          <Routes>
+            {/* Rotas públicas (auth) */}
+            <Route path="/login" element={<Login />} caseSensitive />
+            <Route path="/signup" element={<Signup />} caseSensitive />
+            <Route path="/forgot-password" element={<ForgotPassword />} caseSensitive />
 
-          {/* Rotas protegidas — todas usam o AppLayout */}
-          <Route
-            element={
-              <ProtectedRoute>
-                <AppLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/dashboard" element={<Dashboard />} caseSensitive />
+            {/* Rotas protegidas — todas usam o AppLayout */}
             <Route
-                path="/carteira"
-                element={
-                  <CarteiraProvider>
-                    <Carteira />
-                  </CarteiraProvider>
-                }
-                caseSensitive
-              />
+              element={
+                <ProtectedRoute>
+                  <ProtectedLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/dashboard" element={<Dashboard />} caseSensitive />
               <Route
-                  path="/categorias"
+                  path="/carteira"
                   element={
-                    <CategoriaProvider>
-                      <Categoria />
-                    </CategoriaProvider>
+                    <CarteiraProvider>
+                      <Carteira />
+                    </CarteiraProvider>
                   }
                   caseSensitive
                 />
+                <Route
+                    path="/categorias"
+                    element={
+                      <CategoriaProvider>
+                        <Categoria />
+                      </CategoriaProvider>
+                    }
+                    caseSensitive
+                  />
 
-             <Route path="/configuracoes" element={<Configuration />} caseSensitive />
-          </Route>
+              <Route path="/configuracoes" element={<Configuration />} caseSensitive />
+            </Route>
 
-          {/* Rota raiz redireciona */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Rota raiz redireciona */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-          {/* Qualquer rota não mapeada cai aqui */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            {/* Qualquer rota não mapeada cai aqui */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </AuthProvider>
     </BrowserRouter>
   );

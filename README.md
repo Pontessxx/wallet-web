@@ -1,75 +1,96 @@
-# React + TypeScript + Vite
+# Wallet Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend React + TypeScript + Vite do projeto Wallet API.
 
-Currently, two official plugins are available:
+## Requisitos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js 22+
+- npm 10+
 
-## React Compiler
+## Instalacao
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Comandos
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- `npm run dev`: sobe frontend em modo mock (MSW ativo)
+- `npm run dev:msw`: mesmo comportamento do `dev` (MSW ativo)
+- `npm run dev:api`: sobe frontend usando API real (MSW desativado)
+- `npm run build`: gera build de producao
+- `npm run preview`: sobe preview do build
+- `npm run lint`: executa lint
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Modos de execucao local
 
+### 1) Rodar com MSW (sem backend)
+
+```bash
+npm run dev
+```
+
+Nesse modo, os handlers de mock sao usados para testar fluxos da UI.
+
+### 2) Rodar com API real (sem CORS no browser)
+
+1. Suba o backend em `http://localhost:8080`.
+2. Rode:
+
+```bash
+npm run dev:api
+```
+
+O frontend usa `VITE_API_URL=/api` e o Vite faz proxy para `VITE_DEV_BACKEND_URL` (padrao: `http://localhost:8080`).
+
+## Variaveis de ambiente do frontend
+
+Arquivos principais:
+
+- `.env`
+- `.env.example`
+- `.env.mock`
+
+Valores esperados:
+
+```dotenv
+VITE_API_URL=/api
+VITE_DEV_BACKEND_URL=http://localhost:8080
+VITE_ENABLE_MSW=false
+```
+
+No modo `mock`, o arquivo `.env.mock` ativa:
+
+```dotenv
+VITE_ENABLE_MSW=true
+```
+
+## Docker Compose
+
+No compose da raiz do repositorio, o frontend ja esta configurado para evitar CORS:
+
+- `FRONTEND_VITE_API_URL=/api`
+- `FRONTEND_VITE_ENABLE_MSW=false`
+
+Rodar stack completa:
+
+```bash
+docker compose up --build
+```
+
+Frontend: `http://localhost:3000`
+
+### Ativar MSW no frontend via compose (opcional)
+
+PowerShell:
+
+```powershell
+$env:FRONTEND_VITE_ENABLE_MSW = "true"
+docker compose up --build
+```
+
+Depois, para voltar ao comportamento normal:
+
+```powershell
+$env:FRONTEND_VITE_ENABLE_MSW = "false"
 ```

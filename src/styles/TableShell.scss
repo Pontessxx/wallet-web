@@ -1,0 +1,7 @@
+@use 'variables' as *;
+
+.table-shell {
+  overflow-x: auto;
+  border: 1px solid $border;
+  border-radius: 8px;
+}
