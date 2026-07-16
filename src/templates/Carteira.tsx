@@ -6,7 +6,7 @@ import CarteiraTable from '@/components/CarteiraTable'
 import CarteiraActionsMenu from '@/components/CarteiraActionsMenu'
 import BankCombobox from '@/components/BankCombobox'
 import TableShell from '@/components/TableShell'
-import type { WalletType } from '@/types/carteira'
+import type { WalletFilterType, WalletType } from '@/types/carteira'
 import '@/styles/CarteiraForm.scss'
 import '@/styles/CarteiraTable.scss'
 import Money from '@/components/Money'
@@ -18,6 +18,7 @@ const Carteira = () => {
   const [nome, setNome] = useState('')
   const [saldoInicial, setSaldoInicial] = useState(0)
   const [tipo, setTipo] = useState<WalletType>('Corrente')
+  const [filtroTipo, setFiltroTipo] = useState<WalletFilterType>('-')
 
   const { openId, position, menuRef, registerTriggerRef, toggle, close } = useDropdownMenu()
 
@@ -33,8 +34,8 @@ const Carteira = () => {
   } = useCarteira()
 
   useEffect(() => {
-    fetchSummary('Corrente')
-  }, [])
+    fetchSummary(filtroTipo === '-' ? undefined : filtroTipo)
+  }, [filtroTipo])
 
   const listaCarteiras = carteiras ?? []
 
@@ -99,9 +100,21 @@ const Carteira = () => {
     <section className="carteira-page">
       <header className="carteira-page__header">
         <h1 className="carteira-page__title">Carteiras</h1>
-        <button className="carteira-page__add-btn" onClick={handleOpenCreate}>
-          Adicionar Carteira
-        </button>
+        <div className="carteira-page__controls">
+          <select
+            className="carteira-page__filter"
+            value={filtroTipo}
+            onChange={(e) => setFiltroTipo(e.target.value as WalletFilterType)}
+            aria-label="Filtrar carteiras por tipo"
+          >
+            <option value="-">-</option>
+            <option value="Corrente">Corrente</option>
+            <option value="Investimento">Investimento</option>
+          </select>
+          <button className="carteira-page__add-btn" onClick={handleOpenCreate}>
+            Adicionar Carteira
+          </button>
+        </div>
       </header>
 
       <TableShell>

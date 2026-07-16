@@ -21,7 +21,7 @@ const CarteiraProvider = ({ children }: CarteiraProviderProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchSummary = async (tipo: WalletType) => {
+  const fetchSummary = async (tipo?: WalletType) => {
     setIsLoading(true);
     setError(null);
 

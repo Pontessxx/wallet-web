@@ -51,7 +51,7 @@ const Signup = () => {
                 response.accessToken
             );
             navigate('/dashboard');
-        } catch (err) {
+        } catch {
             // erro já exibido pelo toast.promise
         } finally {
             setIsLoading(false);

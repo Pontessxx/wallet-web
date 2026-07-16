@@ -1,4 +1,5 @@
 export type WalletType = 'Investimento' | 'Corrente';
+export type WalletFilterType = '-' | WalletType;
 
 export interface Carteira {
   id: string;
@@ -37,7 +38,7 @@ export interface CarteiraContextType {
   saldoTotal: number;
   isLoading: boolean;
   error: string | null;
-  fetchSummary: (tipo: WalletType) => Promise<void>;
+  fetchSummary: (tipo?: WalletType) => Promise<void>;
   createCarteira: (data: CreateCarteiraRequest, tipo: WalletType) => Promise<Carteira>;
   editCarteira: (data: EditCarteiraRequest, tipo: WalletType) => Promise<Carteira>;
   removeCarteira: (id: string, tipo: WalletType) => Promise<void>;

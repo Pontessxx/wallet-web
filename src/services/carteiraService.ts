@@ -28,11 +28,13 @@ export const carteiraService = {
     });
   },
 
-  getSummary: async (tipo: WalletType) => {
+  getSummary: async (tipo?: WalletType) => {
     const response = await privateApi.get<CarteiraSummary>('/wallet/v2/summary', {
-      params: {
-        categoria: tipo,
-      },
+      params: tipo
+        ? {
+            categoria: tipo,
+          }
+        : undefined,
     });
     return response.data;
   },
