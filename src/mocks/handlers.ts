@@ -164,7 +164,8 @@ export const handlers = [
         {
           accessToken: 'mock-access-token',
           expiresIn: 3600,
-          user: loggedInUser,
+          userId: loggedInUser.id,
+          username: loggedInUser.username,
         },
         {
           headers: {
@@ -181,13 +182,20 @@ export const handlers = [
   }),
 
   http.post('/user/v2/create', async ({ request }) => {
-    const body = await request.json();
+    const body = (await request.json()) as { username: string };
+
+    const userId = getUserIdFromUsername(body.username);
+    loggedInUser = {
+      id: userId,
+      username: body.username,
+    };
 
     return HttpResponse.json(
       {
         accessToken: 'novo-token',
         expiresIn: 3600,
-        user: body,
+        userId,
+        username: body.username,
       },
       {
         headers: {
@@ -236,7 +244,7 @@ export const handlers = [
       return HttpResponse.json({ valid: false }, { status: 401 });
     }
 
-    return HttpResponse.json({ valid: true });
+    return HttpResponse.json({ isValid: true, userId: loggedInUser?.id ?? 'mock-user-id', expiresAt: new Date(Date.now() + 3600 * 1000).toISOString() });
   }),
 
   http.delete('/auth/v2/logout', ({ request }) => {
@@ -249,20 +257,17 @@ export const handlers = [
       );
     }
 
-    return HttpResponse.json(
-      { message: 'Logout realizado com sucesso.' },
-      {
-        status: 200,
-        headers: {
-          'Set-Cookie': `${REFRESH_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`,
-        },
-      }
-    );
+    return new HttpResponse(null, {
+      status: 204,
+      headers: {
+        'Set-Cookie': `${REFRESH_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`,
+      },
+    });
   }),
 
   // ===== Esqueci minha senha =====
 
-  http.post('/auth/v1/reset-code', async ({ request }) => {
+  http.post('/auth/v2/reset-code', async ({ request }) => {
     const body = (await request.json()) as { username: string };
 
     if (!body.username?.trim()) {
@@ -287,7 +292,7 @@ export const handlers = [
     });
   }),
 
-  http.put('/auth/v1/change-password', async ({ request }) => {
+  http.put('/auth/v2/change-password', async ({ request }) => {
     const body = (await request.json()) as {
       username: string;
       resetCode: string;
@@ -340,7 +345,7 @@ export const handlers = [
 
   // ===== User =====
 
-  http.get('/user/v1/me', ({ request }) => {
+  http.get('/user/v2/me', ({ request }) => {
     const token = getBearerToken(request);
 
     if (!token || !loggedInUser) {
@@ -350,7 +355,7 @@ export const handlers = [
           title: 'Não autenticado',
           status: 401,
           detail: 'Access token ausente ou inválido.',
-          instance: '/user/v1/me',
+          instance: '/user/v2/me',
         },
         { status: 401 }
       );
@@ -359,17 +364,47 @@ export const handlers = [
     return HttpResponse.json(loggedInUser);
   }),
 
-  http.delete('/user/v1/remove', ({ request }) => {
+  http.put('/user/v2/edit', async ({ request }) => {
     const token = getBearerToken(request);
-
     if (!token || !loggedInUser) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const body = (await request.json()) as { id: string; username: string };
+    if (!body.username?.trim()) {
+      return HttpResponse.json({ message: 'Username é obrigatório.' }, { status: 400 });
+    }
+
+    loggedInUser = {
+      id: body.id ?? loggedInUser.id,
+      username: body.username.trim(),
+    };
+
+    return HttpResponse.json(loggedInUser);
+  }),
+
+  http.put('/user/v2/edit-password', ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token || !loggedInUser) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    return HttpResponse.json({ message: 'Senha atualizada com sucesso.' });
+  }),
+
+  http.delete('/user/v2/remove', ({ request }) => {
+    const token = getBearerToken(request);
+    const url = new URL(request.url);
+    const id = url.searchParams.get('id');
+
+    if (!token || !loggedInUser || !id) {
       return HttpResponse.json(
         {
           type: 'about:blank',
           title: 'Não autenticado',
           status: 401,
           detail: 'Access token ausente ou inválido.',
-          instance: '/user/v1/remove',
+          instance: '/user/v2/remove',
         },
         { status: 401 }
       );
@@ -378,20 +413,17 @@ export const handlers = [
     delete userDb[loggedInUser.username];
     loggedInUser = null;
 
-    return HttpResponse.json(
-      { message: 'Usuário removido com sucesso.' },
-      {
-        status: 200,
-        headers: {
-          'Set-Cookie': `${REFRESH_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`,
-        },
-      }
-    );
+    return new HttpResponse(null, {
+      status: 204,
+      headers: {
+        'Set-Cookie': `${REFRESH_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`,
+      },
+    });
   }),
 
   // ===== Carteira (wallet) =====
 
-  http.post('/wallet/v1/accounts/create', async ({ request }) => {
+  http.post('/wallet/v2/accounts/create', async ({ request }) => {
     const token = getBearerToken(request);
     if (!token) {
       return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
@@ -424,23 +456,16 @@ export const handlers = [
     return HttpResponse.json(novaCarteira, { status: 201 });
   }),
 
-  http.put('/wallet/v1/accounts/edit', async ({ request }) => {
+  http.put('/wallet/v2/accounts/edit', async ({ request }) => {
     const token = getBearerToken(request);
     if (!token) {
       return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
     }
 
-    const tipo = getWalletType(request);
-    if (!tipo) {
-      return HttpResponse.json(
-        { message: 'Header X-WalletType inválido ou ausente.' },
-        { status: 400 }
-      );
-    }
+    const body = (await request.json()) as Partial<Carteira> & { id: string; categoria?: WalletType };
+    const tipo = body.categoria ?? 'Corrente';
 
-    const body = (await request.json()) as Partial<Carteira> & { id: string };
-
-    const index = carteiraDb[tipo].findIndex((c) => c.id === body.id);
+    const index = carteiraDb[tipo]?.findIndex((c) => c.id === body.id) ?? -1;
     if (index === -1) {
       return HttpResponse.json({ message: 'Carteira não encontrada.' }, { status: 404 });
     }
@@ -450,21 +475,21 @@ export const handlers = [
     return HttpResponse.json(carteiraDb[tipo][index]);
   }),
 
-  http.delete('/wallet/v1/accounts/remove', async ({ request }) => {
+  http.delete('/wallet/v2/accounts/remove', async ({ request }) => {
     const token = getBearerToken(request);
     if (!token) {
       return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
     }
 
-    const tipo = getWalletType(request);
-    if (!tipo) {
-      return HttpResponse.json(
-        { message: 'Header X-WalletType inválido ou ausente.' },
-        { status: 400 }
-      );
-    }
-
     const body = (await request.json()) as { id: string };
+
+    const tipo = (Object.keys(carteiraDb) as WalletType[]).find((key) =>
+      carteiraDb[key].some((c) => c.id === body.id)
+    );
+
+    if (!tipo) {
+      return HttpResponse.json({ message: 'Carteira não encontrada.' }, { status: 404 });
+    }
 
     const index = carteiraDb[tipo].findIndex((c) => c.id === body.id);
     if (index === -1) {
@@ -476,19 +501,14 @@ export const handlers = [
     return HttpResponse.json({ message: 'Carteira removida com sucesso.' });
   }),
 
-  http.get('/wallet/v1/summary', ({ request }) => {
+  http.get('/wallet/v2/summary', ({ request }) => {
     const token = getBearerToken(request);
     if (!token) {
       return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
     }
 
-    const tipo = getWalletType(request);
-    if (!tipo) {
-      return HttpResponse.json(
-        { message: 'Header X-WalletType inválido ou ausente.' },
-        { status: 400 }
-      );
-    }
+    const url = new URL(request.url);
+    const tipo = (url.searchParams.get('categoria') as WalletType | null) ?? 'Corrente';
 
     const carteiras = carteiraDb[tipo];
     const saldoTotal = carteiras.reduce((acc, c) => acc + c.saldo, 0);

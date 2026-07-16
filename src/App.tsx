@@ -4,6 +4,10 @@ import AuthProvider from '@/contexts/AuthContext';
 import CarteiraProvider from '@/contexts/CarteiraContext';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import CategoriaProvider from '@/contexts/CategoriaContext';
+import GoalProvider from '@/contexts/GoalContext';
+import TransferProvider from '@/contexts/TransferContext';
+import ExchangeProvider from '@/contexts/ExchangeContext';
+import TransactionProvider from '@/contexts/TransactionContext';
 
 const Login = lazy(() => import('@/templates/Login'));
 const Signup = lazy(() => import('@/templates/Signup'));
@@ -40,9 +44,35 @@ function App() {
               }
             >
               <Route path="/dashboard" element={<Dashboard />} caseSensitive />
-              <Route path="/transacoes" element={<Transaction />} caseSensitive />
-              <Route path="/objetivos" element={<Objetivo />} caseSensitive />
-              <Route path="/operacoes-bolsa" element={<OperacaoBolsa />} caseSensitive />
+              <Route
+                path="/transacoes"
+                element={
+                  <TransactionProvider>
+                    <TransferProvider>
+                      <Transaction />
+                    </TransferProvider>
+                  </TransactionProvider>
+                }
+                caseSensitive
+              />
+              <Route
+                path="/objetivos"
+                element={
+                  <GoalProvider>
+                    <Objetivo />
+                  </GoalProvider>
+                }
+                caseSensitive
+              />
+              <Route
+                path="/operacoes-bolsa"
+                element={
+                  <ExchangeProvider>
+                    <OperacaoBolsa />
+                  </ExchangeProvider>
+                }
+                caseSensitive
+              />
               <Route
                   path="/carteira"
                   element={

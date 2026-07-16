@@ -79,12 +79,12 @@ const CarteiraProvider = ({ children }: CarteiraProviderProps) => {
     }
   };
 
-  const removeCarteira = async (id: string, tipo: WalletType): Promise<void> => {
+  const removeCarteira = async (id: string, _tipo: WalletType): Promise<void> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      await carteiraService.removeAccount(id, tipo);
+      await carteiraService.removeAccount(id);
       setCarteiras((prev) => prev.filter((c) => c.id !== id));
     } catch (err) {
       setError('Erro ao remover carteira. Tente novamente.');

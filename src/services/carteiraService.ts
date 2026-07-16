@@ -9,7 +9,7 @@ import type {
 
 export const carteiraService = {
   createAccount: async (data: CreateCarteiraRequest, tipo: WalletType) => {
-    const response = await privateApi.post<Carteira>('/wallet/v1/accounts/create', data, {
+    const response = await privateApi.post<Carteira>('/wallet/v2/accounts/create', data, {
       headers: {
         'X-WalletType': tipo,
       },
@@ -17,28 +17,21 @@ export const carteiraService = {
     return response.data;
   },
 
-  editAccount: async (data: EditCarteiraRequest, tipo: WalletType) => {
-    const response = await privateApi.put<Carteira>('/wallet/v1/accounts/edit', data, {
-      headers: {
-        'X-WalletType': tipo,
-      },
-    });
+  editAccount: async (data: EditCarteiraRequest, _tipo: WalletType) => {
+    const response = await privateApi.put<Carteira>('/wallet/v2/accounts/edit', data);
     return response.data;
   },
 
-  removeAccount: async (id: string, tipo: WalletType) => {
-    await privateApi.delete('/wallet/v1/accounts/remove', {
-      headers: {
-        'X-WalletType': tipo,
-      },
+  removeAccount: async (id: string) => {
+    await privateApi.delete('/wallet/v2/accounts/remove', {
       data: { id },
     });
   },
 
   getSummary: async (tipo: WalletType) => {
-    const response = await privateApi.get<CarteiraSummary>('/wallet/v1/summary', {
-      headers: {
-        'X-WalletType': tipo,
+    const response = await privateApi.get<CarteiraSummary>('/wallet/v2/summary', {
+      params: {
+        categoria: tipo,
       },
     });
     return response.data;

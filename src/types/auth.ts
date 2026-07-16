@@ -29,7 +29,12 @@ export interface AuthResponse {
 }
 
 export interface EditUsernameRequest {
+  id?: string;
   username: string;
+}
+
+export interface RemoveUserRequest {
+  id?: string;
 }
 
 export interface EditPasswordRequest {
