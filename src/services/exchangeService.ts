@@ -16,7 +16,7 @@ export const exchangeService = {
   },
 
   getHistory: async (params: ExchangeHistoryParams) => {
-    const response = await privateApi.get<ExchangeHistoryResponse>('/exchange/v2/history', {
+    const response = await privateApi.get<ExchangeHistoryResponse>('/history/v2/exchange', {
       params,
     });
 

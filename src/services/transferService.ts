@@ -8,7 +8,7 @@ import type {
 
 export const transferService = {
   getById: async (id: string) => {
-    const response = await privateApi.get<TransferTransaction>('/transfer/v2/list', {
+    const response = await privateApi.get<TransferTransaction>('/transaction/v2/list', {
       params: { id },
     });
 
@@ -16,20 +16,20 @@ export const transferService = {
   },
 
   getHistory: async (params: TransferHistoryParams) => {
-    const response = await privateApi.get<TransferHistoryResponse>('/transfer/v2/history', {
+    const response = await privateApi.get<TransferHistoryResponse>('/history/v2/transactions', {
       params,
     });
 
-    return response.data.transacoes ?? [];
+    return (response.data.transacoes ?? []).filter((entry) => entry.tipo !== 'Transferencia');
   },
 
   create: async (payload: TransferUpsertRequest) => {
-    const response = await privateApi.post<TransferTransaction>('/transfer/v2/new', payload);
+    const response = await privateApi.post<TransferTransaction>('/transaction/v2/new', payload);
     return response.data;
   },
 
   update: async (id: string, payload: TransferUpsertRequest) => {
-    const response = await privateApi.put<TransferTransaction>('/transfer/v2/edit', payload, {
+    const response = await privateApi.put<TransferTransaction>('/transaction/v2/edit', payload, {
       params: {
         id,
       },
@@ -39,7 +39,7 @@ export const transferService = {
   },
 
   remove: async (id: string) => {
-    await privateApi.delete('/transfer/v2/remove', {
+    await privateApi.delete('/transaction/v2/remove', {
       params: {
         id,
       },
