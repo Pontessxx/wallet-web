@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from "@/contexts/AuthContext";
 import { authService } from "@/services/authService";
 import '@/styles/Header.scss';
-import { ArrowRightLeft, Eye, EyeOff, Minus, Plus } from 'lucide-react';
+import { ArrowRightLeft, ChevronLeft, ChevronRight, Eye, EyeOff, Minus, Plus } from 'lucide-react';
 import { useVisibility } from '@/contexts/VisibilityContext';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -15,19 +15,9 @@ import { transferService } from '@/services/transferService';
 import { transactionService } from '@/services/transactionService';
 import { exchangeService } from '@/services/exchangeService';
 
-const MONTH_OPTIONS = [
-    { value: 0, label: 'Jan' },
-    { value: 1, label: 'Fev' },
-    { value: 2, label: 'Mar' },
-    { value: 3, label: 'Abr' },
-    { value: 4, label: 'Mai' },
-    { value: 5, label: 'Jun' },
-    { value: 6, label: 'Jul' },
-    { value: 7, label: 'Ago' },
-    { value: 8, label: 'Set' },
-    { value: 9, label: 'Out' },
-    { value: 10, label: 'Nov' },
-    { value: 11, label: 'Dez' },
+const MONTH_FULL_NAMES = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
 
 const toDateInputValue = (date = new Date()) => {
@@ -55,6 +45,7 @@ const Header = () => {
     const [activeAction, setActiveAction] = useState<HeaderAction | null>(null);
     const [walletOptions, setWalletOptions] = useState<Array<{ id: string; nome: string }>>([]);
     const [categoryOptions, setCategoryOptions] = useState<Array<{ id: string; nome: string }>>([]);
+    const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
 
     const [carteiraId, setCarteiraId] = useState('');
     const [carteiraDestinoId, setCarteiraDestinoId] = useState('');
@@ -82,8 +73,35 @@ const Header = () => {
     }
 
     const initials = user?.username?.slice(0, 2).toUpperCase() ?? '??';
-    const currentYear = new Date().getFullYear();
-    const yearOptions = Array.from({ length: 13 }, (_, index) => currentYear - 6 + index);
+
+    // --- Navegação de mês (pílula "< Mês >") ---
+    const today = new Date();
+    const isCurrentMonth =
+        monthDate.getFullYear() === today.getFullYear() &&
+        monthDate.getMonth() === today.getMonth();
+
+    const goToMonth = (year: number, month: number) => {
+        setMonthDate(new Date(year, month, 1));
+        setShowMonthYearPicker(false);
+    };
+
+    const handlePrevMonth = () => {
+        goToMonth(monthDate.getFullYear(), monthDate.getMonth() - 1);
+    };
+
+    const handleNextMonth = () => {
+        goToMonth(monthDate.getFullYear(), monthDate.getMonth() + 1);
+    };
+
+    const handleMonthLabelClick = () => {
+        if (isCurrentMonth) {
+            // já estou no mês atual -> abre o seletor de mês/ano
+            setShowMonthYearPicker((prev) => !prev);
+        } else {
+            // estou em outro mês -> volta direto para o mês atual
+            goToMonth(today.getFullYear(), today.getMonth());
+        }
+    };
 
     useEffect(() => {
         if (!activeAction) return;
@@ -290,39 +308,48 @@ const Header = () => {
                 )}
 
                 {mode === 'monthly' && (
-                    <>
-                        <select
-                            className="app-header__period-value"
-                            value={monthDate.getMonth()}
-                            onChange={(event) => {
-                                const nextMonth = Number(event.target.value);
-                                setMonthDate(new Date(monthDate.getFullYear(), nextMonth, 1));
-                            }}
-                            aria-label="Mes do período"
+                    <div className="app-header__month-nav">
+                        <button
+                            type="button"
+                            className="app-header__month-nav-btn"
+                            onClick={handlePrevMonth}
+                            aria-label="Mês anterior"
                         >
-                            {MONTH_OPTIONS.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                    {option.label}
-                                </option>
-                            ))}
-                        </select>
+                            <ChevronLeft size={18} />
+                        </button>
 
-                        <select
-                            className="app-header__period-value app-header__period-value--year"
-                            value={monthDate.getFullYear()}
-                            onChange={(event) => {
-                                const nextYear = Number(event.target.value);
-                                setMonthDate(new Date(nextYear, monthDate.getMonth(), 1));
+                        <DatePicker
+                            selected={monthDate}
+                            onChange={(date: Date | null) => {
+                                if (date) {
+                                    goToMonth(date.getFullYear(), date.getMonth());
+                                } else {
+                                    setShowMonthYearPicker(false);
+                                }
                             }}
-                            aria-label="Ano do período"
+                            showMonthYearPicker
+                            open={showMonthYearPicker}
+                            onInputClick={handleMonthLabelClick}
+                            onClickOutside={() => setShowMonthYearPicker(false)}
+                            customInput={
+                                <button
+                                    type="button"
+                                    className="app-header__month-label"
+                                >
+                                    {MONTH_FULL_NAMES[monthDate.getMonth()]}
+                                </button>
+                            }
+                        />
+
+                        <button
+                            type="button"
+                            className="app-header__month-nav-btn"
+                            onClick={handleNextMonth}
+                            aria-label="Próximo mês"
                         >
-                            {yearOptions.map((year) => (
-                                <option key={year} value={year}>
-                                    {year}
-                                </option>
-                            ))}
-                        </select>
-                    </>
+                            <ChevronRight size={18} />
+                        </button>
+                    </div>
                 )}
 
                 {mode === 'yearly' && (

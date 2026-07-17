@@ -185,26 +185,145 @@
             cursor: not-allowed;
         }
     }
+}
 
-    @media (max-width: 900px) {
-        flex-wrap: wrap;
-        height: auto;
-        padding-top: 0.8rem;
-        padding-bottom: 0.8rem;
+// ---------------------------------------------
+// Pílula de navegação de mês ("< Julho >")
+// ---------------------------------------------
+.app-header__month-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background-color: $surface;
+    border: 1px solid $border;
+    border-radius: 999px;
+    padding: 4px 6px;
+    position: relative; // ancora o popup do datepicker
+}
 
-        &__filters {
-            order: 2;
-            width: 100%;
-        }
+.app-header__month-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: $text-secondary;
+    cursor: pointer;
 
-        &__user {
-            order: 1;
-            margin-left: auto;
-        }
+    &:hover {
+        background-color: $surface-hover;
+        color: $text;
+    }
+}
 
-        &__actions {
-            order: 3;
-            width: 100%;
+.app-header__month-label {
+    border: none;
+    background: transparent;
+    color: $text;
+    font-weight: 600;
+    padding: 0 10px;
+    cursor: pointer;
+    min-width: 90px;
+    text-align: center;
+
+    &:hover {
+        color: $text-secondary;
+    }
+}
+
+// ---------------------------------------------
+// Tema do react-datepicker (popup de mês/ano)
+// !important é necessário aqui: o CSS padrão da lib
+// (react-datepicker/dist/react-datepicker.css) é importado
+// depois do nosso SCSS no bundle, então sobrescreve regras
+// de mesma especificidade sem o !important.
+// ---------------------------------------------
+.react-datepicker-popper {
+    z-index: 1000 !important;
+}
+
+.react-datepicker {
+    background-color: $surface !important;
+    border: 1px solid $border !important;
+    border-radius: 10px !important;
+    box-shadow: 0 4px 16px $box-shadow !important;
+    font-family: inherit !important;
+    overflow: hidden;
+
+    &__triangle {
+        display: none !important;
+    }
+}
+
+.react-datepicker__header {
+    background-color: $surface !important;
+    border-bottom: 1px solid $border !important;
+    padding-top: 0.7rem !important;
+}
+
+.react-datepicker__current-month,
+.react-datepicker-year-header {
+    color: $text !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    margin-bottom: 0.3rem !important;
+}
+
+.react-datepicker__navigation-icon::before {
+    border-color: $text-secondary !important;
+}
+
+.react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
+    border-color: $text !important;
+}
+
+// grid de meses (showMonthYearPicker)
+.react-datepicker__month-wrapper {
+    display: flex !important;
+    gap: 0.25rem !important;
+}
+
+.react-datepicker__month-text {
+    color: $text !important;
+    background-color: transparent !important;
+    border-radius: 6px !important;
+    padding: 0.4rem 0.5rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+
+    &:hover {
+        background-color: $surface-hover !important;
+        color: $text !important;
+    }
+
+    &--keyboard-selected {
+        background-color: transparent !important;
+        color: $text !important;
+    }
+
+    &--selected {
+        background-color: $info !important;
+        color: $text-inverse !important;
+        font-weight: 700 !important;
+
+        &:hover {
+            background-color: $info !important;
         }
     }
+
+    &--disabled {
+        color: $text-disabled !important;
+        cursor: not-allowed !important;
+
+        &:hover {
+            background-color: transparent !important;
+        }
+    }
+}
+
+.react-datepicker__month {
+    margin: 0.5rem !important;
 }
