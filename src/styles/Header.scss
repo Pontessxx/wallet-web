@@ -3,7 +3,8 @@
 .app-header {
     display: flex;
     align-items: center;
-    justify-content: flex-end; // só sobrou o bloco de user, então empurra pra direita
+    justify-content: space-between;
+    gap: 1rem;
     height: $header-height;
     padding: 0 1.5rem;
     background-color: $surface;
@@ -17,6 +18,74 @@
         display: flex;
         align-items: center;
         gap: 0.75rem;
+    }
+
+    &__filters {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        min-width: 0;
+    }
+
+    &__actions {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+    }
+
+    &__period-type,
+    &__datepicker,
+    &__period-value {
+        border: 1px solid $border;
+        background-color: $surface;
+        color: $text;
+        font-size: 0.85rem;
+        font-weight: 500;
+        padding: 0.4rem 0.65rem;
+        border-radius: 6px;
+        min-height: 2rem;
+    }
+
+    &__datepicker {
+        width: 9.25rem;
+    }
+
+    &__period-value {
+        min-width: 5.5rem;
+
+        &--year {
+            min-width: 5rem;
+        }
+    }
+
+    &__action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        border: 1px solid $border;
+        border-radius: 6px;
+        background: transparent;
+        color: $text;
+        cursor: pointer;
+        font-size: 0.83rem;
+        font-weight: 600;
+        padding: 0.42rem 0.66rem;
+
+        &--success {
+            border-color: rgba($success, 0.45);
+            color: $success;
+        }
+
+        &--danger {
+            border-color: rgba($error, 0.45);
+            color: $error;
+        }
+
+        &--neutral {
+            border-color: rgba($info, 0.45);
+            color: $info;
+        }
     }
 
     &__avatar {
@@ -65,5 +134,77 @@
     }
     &__visibility{
         color: $text-secondary;
+    }
+
+    &__form {
+        display: grid;
+        gap: 0.8rem;
+
+        label {
+            display: grid;
+            gap: 0.35rem;
+            color: $text-secondary;
+            font-size: 0.86rem;
+            font-weight: 500;
+        }
+
+        input,
+        select,
+        textarea {
+            border: 1px solid $border;
+            border-radius: 6px;
+            background-color: $surface;
+            color: $text;
+            padding: 0.5rem 0.6rem;
+            font-size: 0.9rem;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+    }
+
+    &__form-error {
+        margin: 0;
+        color: $error;
+        font-size: 0.9rem;
+    }
+
+    &__submit {
+        border: 1px solid rgba($success, 0.45);
+        border-radius: 6px;
+        background-color: rgba($success, 0.15);
+        color: $success;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 700;
+        padding: 0.55rem 0.8rem;
+
+        &:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+    }
+
+    @media (max-width: 900px) {
+        flex-wrap: wrap;
+        height: auto;
+        padding-top: 0.8rem;
+        padding-bottom: 0.8rem;
+
+        &__filters {
+            order: 2;
+            width: 100%;
+        }
+
+        &__user {
+            order: 1;
+            margin-left: auto;
+        }
+
+        &__actions {
+            order: 3;
+            width: 100%;
+        }
     }
 }

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 import { goalService } from '@/services/goalService';
+import { useDateFilter } from '@/contexts/DateFilterContext';
 import type {
   CreateGoalOptions,
   CreateGoalRequest,
@@ -20,13 +21,17 @@ const GoalProvider = ({ children }: GoalProviderProps) => {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { periodQuery } = useDateFilter();
 
   const fetchGoals = async (params?: GoalListParams) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const data = await goalService.list(params);
+      const data = await goalService.list({
+        ...periodQuery,
+        ...params,
+      });
       setGoals(data);
     } catch (err) {
       setError('Erro ao carregar objetivos.');

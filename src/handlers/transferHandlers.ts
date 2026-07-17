@@ -15,7 +15,7 @@ export const transferHandlers = {
     }
   },
 
-  history: async (params: TransferHistoryParams): Promise<TransferTransaction[]> => {
+  history: async (params?: TransferHistoryParams): Promise<TransferTransaction[]> => {
     try {
       return await transferService.getHistory(params);
     } catch (error) {

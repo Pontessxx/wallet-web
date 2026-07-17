@@ -47,7 +47,7 @@ export interface ExchangeContextType {
   operations: ExchangeTransaction[];
   isLoading: boolean;
   error: string | null;
-  fetchHistory: (params: ExchangeHistoryParams) => Promise<void>;
+  fetchHistory: (params?: ExchangeHistoryParams) => Promise<void>;
   getById: (id: string) => Promise<ExchangeTransaction>;
   createOperation: (payload: ExchangeUpsertRequest) => Promise<ExchangeTransaction>;
   updateOperation: (id: string, payload: ExchangeUpsertRequest) => Promise<ExchangeTransaction>;

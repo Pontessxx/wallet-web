@@ -1,6 +1,7 @@
 import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 import { exchangeService } from '@/services/exchangeService';
+import { useDateFilter } from '@/contexts/DateFilterContext';
 import type {
   ExchangeContextType,
   ExchangeHistoryParams,
@@ -18,13 +19,17 @@ const ExchangeProvider = ({ children }: ExchangeProviderProps) => {
   const [operations, setOperations] = useState<ExchangeTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { periodQuery } = useDateFilter();
 
-  const fetchHistory = async (params: ExchangeHistoryParams) => {
+  const fetchHistory = async (params?: ExchangeHistoryParams) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const data = await exchangeService.getHistory(params);
+      const data = await exchangeService.getHistory({
+        ...periodQuery,
+        ...params,
+      });
       setOperations(data);
     } catch (err) {
       setError('Erro ao carregar histórico de operações.');

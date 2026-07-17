@@ -1,6 +1,9 @@
 import { http, HttpResponse } from 'msw';
 import type { Carteira, WalletType } from '@/types/carteira';
 import type { Categoria, CategoriaIconKey } from '@/types/categoria';
+import type { TransferTransaction, TransferUpsertRequest } from '@/types/transfer';
+import type { ExchangeTransaction, ExchangeUpsertRequest } from '@/types/exchange';
+import type { WalletTransferUpsertRequest } from '@/types/transaction';
 
 const REFRESH_COOKIE_NAME = 'refreshToken';
 
@@ -23,6 +26,9 @@ const getWalletType = (request: Request): WalletType | null => {
   if (tipo === 'Corrente' || tipo === 'Investimento') return tipo;
   return null;
 };
+
+const findWalletById = (walletId: string): Carteira | undefined =>
+  [...carteiraDb.Corrente, ...carteiraDb.Investimento].find((wallet) => wallet.id === walletId);
 
 // Guarda o usuário "logado" no mock, setado no login e limpo no logout/remove
 let loggedInUser: { id: string; username: string } | null = null;
@@ -83,7 +89,7 @@ const carteiraDb: Record<WalletType, Carteira[]> = {
   Investimento: [
     {
       id: 'mock-5',
-      nome: 'Investimentos',
+      nome: 'XP',
       categoria: 'Investimento',
       saldoInicial: 0,
       receitas: 0,
@@ -144,6 +150,148 @@ const userDb: Record<string, { password: string }> = {
 const resetCodeDb: Record<string, { code: string; expiresAt: number }> = {};
 
 const RESET_CODE_TTL_MS = 5 * 60 * 1000; // 5 minutos
+
+const parsePeriodRange = (url: URL): { start: Date; endExclusive: Date } | null => {
+  const periodType = url.searchParams.get('periodType');
+  if (!periodType) return null;
+
+  if (periodType === 'range') {
+    const startDate = url.searchParams.get('startDate');
+    const endDate = url.searchParams.get('endDate');
+    if (!startDate || !endDate) return null;
+
+    const start = new Date(`${startDate}T00:00:00.000Z`);
+    const endExclusive = new Date(`${endDate}T00:00:00.000Z`);
+    endExclusive.setUTCDate(endExclusive.getUTCDate() + 1);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(endExclusive.getTime())) return null;
+    return { start, endExclusive };
+  }
+
+  if (periodType === 'monthly') {
+    const year = Number(url.searchParams.get('year'));
+    const month = Number(url.searchParams.get('month'));
+    if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) return null;
+
+    const start = new Date(Date.UTC(year, month - 1, 1));
+    const endExclusive = new Date(Date.UTC(year, month, 1));
+    return { start, endExclusive };
+  }
+
+  if (periodType === 'yearly') {
+    const year = Number(url.searchParams.get('year'));
+    if (!Number.isFinite(year)) return null;
+
+    const start = new Date(Date.UTC(year, 0, 1));
+    const endExclusive = new Date(Date.UTC(year + 1, 0, 1));
+    return { start, endExclusive };
+  }
+
+  return null;
+};
+
+const isInsidePeriod = (dateValue: string, range: { start: Date; endExclusive: Date } | null): boolean => {
+  if (!range) return true;
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return false;
+  return date >= range.start && date < range.endExclusive;
+};
+
+let transferTransactionDb: TransferTransaction[] = [
+  {
+    id: 'tr-mock-1',
+    carteiraId: 'mock-2',
+    carteiraDestinoId: null,
+    tipo: 'Receita',
+    categoriaId: 'cat-mock-1',
+    categoriaNome: 'Alimentação',
+    valor: 2500,
+    encargos: 0,
+    valorTotal: 2500,
+    efetivada: true,
+    dataLancamento: '2026-07-10T00:00:00.000Z',
+    dataVencimento: null,
+    dataEfetivacao: '2026-07-10T00:00:00.000Z',
+    observacoes: 'Receita recorrente',
+    criadaEm: '2026-07-10T12:00:00.000Z',
+    atualizadaEm: null,
+  },
+  {
+    id: 'tr-mock-2',
+    carteiraId: 'mock-2',
+    carteiraDestinoId: null,
+    tipo: 'Despesa',
+    categoriaId: 'cat-mock-2',
+    categoriaNome: 'Transporte',
+    valor: 340,
+    encargos: 10,
+    valorTotal: 350,
+    efetivada: true,
+    dataLancamento: '2026-07-12T00:00:00.000Z',
+    dataVencimento: null,
+    dataEfetivacao: '2026-07-12T00:00:00.000Z',
+    observacoes: 'Combustivel',
+    criadaEm: '2026-07-12T12:00:00.000Z',
+    atualizadaEm: null,
+  },
+  {
+    id: 'tr-mock-3',
+    carteiraId: 'mock-2',
+    carteiraDestinoId: 'mock-5',
+    tipo: 'Transferencia',
+    categoriaId: null,
+    categoriaNome: null,
+    valor: 500,
+    encargos: 0,
+    valorTotal: 500,
+    efetivada: true,
+    dataLancamento: '2026-07-14T00:00:00.000Z',
+    dataVencimento: null,
+    dataEfetivacao: '2026-07-14T00:00:00.000Z',
+    observacoes: 'Aporte para investimentos',
+    criadaEm: '2026-07-14T12:00:00.000Z',
+    atualizadaEm: null,
+  },
+];
+
+let exchangeTransactionDb: ExchangeTransaction[] = [
+  {
+    id: 'ex-mock-1',
+    carteiraId: 'mock-5',
+    codigoAtivo: 'PETR4',
+    lado: 'Compra',
+    quantidade: 10,
+    precoUnitario: 32.5,
+    valor: 325,
+    encargos: 1.5,
+    valorTotal: 326.5,
+    efetivada: true,
+    dataLancamento: '2026-07-11T00:00:00.000Z',
+    dataVencimento: null,
+    dataEfetivacao: '2026-07-11T00:00:00.000Z',
+    observacoes: null,
+    criadaEm: '2026-07-11T12:00:00.000Z',
+    atualizadaEm: null,
+  },
+  {
+    id: 'ex-mock-2',
+    carteiraId: 'mock-5',
+    codigoAtivo: 'VALE3',
+    lado: 'Venda',
+    quantidade: 4,
+    precoUnitario: 68,
+    valor: 272,
+    encargos: 1,
+    valorTotal: 273,
+    efetivada: true,
+    dataLancamento: '2026-07-15T00:00:00.000Z',
+    dataVencimento: null,
+    dataEfetivacao: '2026-07-15T00:00:00.000Z',
+    observacoes: 'Realizacao parcial',
+    criadaEm: '2026-07-15T12:00:00.000Z',
+    atualizadaEm: null,
+  },
+];
 
 export const handlers = [
   http.post('/auth/v2/login', async ({ request }) => {
@@ -463,16 +611,35 @@ export const handlers = [
     }
 
     const body = (await request.json()) as Partial<Carteira> & { id: string; categoria?: WalletType };
-    const tipo = body.categoria ?? 'Corrente';
+    const origemTipo = (Object.keys(carteiraDb) as WalletType[]).find((key) =>
+      carteiraDb[key].some((c) => c.id === body.id)
+    );
 
-    const index = carteiraDb[tipo]?.findIndex((c) => c.id === body.id) ?? -1;
-    if (index === -1) {
+    if (!origemTipo) {
       return HttpResponse.json({ message: 'Carteira não encontrada.' }, { status: 404 });
     }
 
-    carteiraDb[tipo][index] = { ...carteiraDb[tipo][index], ...body };
+    const origemIndex = carteiraDb[origemTipo].findIndex((c) => c.id === body.id);
+    if (origemIndex === -1) {
+      return HttpResponse.json({ message: 'Carteira não encontrada.' }, { status: 404 });
+    }
 
-    return HttpResponse.json(carteiraDb[tipo][index]);
+    const destinoTipo = body.categoria ?? origemTipo;
+    const carteiraAtual = carteiraDb[origemTipo][origemIndex];
+    const carteiraAtualizada: Carteira = {
+      ...carteiraAtual,
+      ...body,
+      categoria: destinoTipo,
+    };
+
+    if (destinoTipo === origemTipo) {
+      carteiraDb[origemTipo][origemIndex] = carteiraAtualizada;
+    } else {
+      carteiraDb[origemTipo].splice(origemIndex, 1);
+      carteiraDb[destinoTipo].push(carteiraAtualizada);
+    }
+
+    return HttpResponse.json(carteiraAtualizada);
   }),
 
   http.delete('/wallet/v2/accounts/remove', async ({ request }) => {
@@ -508,15 +675,389 @@ export const handlers = [
     }
 
     const url = new URL(request.url);
-    const tipo = (url.searchParams.get('categoria') as WalletType | null) ?? 'Corrente';
+    const categoriaQuery = url.searchParams.get('categoria') as WalletType | null;
+    const period = parsePeriodRange(url);
 
-    const carteiras = carteiraDb[tipo];
+    const baseCarteiras = categoriaQuery
+      ? carteiraDb[categoriaQuery]
+      : [...carteiraDb.Corrente, ...carteiraDb.Investimento];
+
+    const carteiras = baseCarteiras.map((wallet) => {
+      const walletTransactions = transferTransactionDb.filter(
+        (entry) =>
+          isInsidePeriod(entry.dataLancamento, period)
+          && (entry.carteiraId === wallet.id || entry.carteiraDestinoId === wallet.id)
+      );
+
+      const receitas = walletTransactions
+        .filter((entry) => entry.tipo === 'Receita' && entry.carteiraId === wallet.id)
+        .reduce((total, entry) => total + entry.valorTotal, 0);
+
+      const despesas = walletTransactions
+        .filter((entry) => entry.tipo === 'Despesa' && entry.carteiraId === wallet.id)
+        .reduce((total, entry) => total + entry.valorTotal, 0);
+
+      const transferIn = walletTransactions
+        .filter((entry) => entry.tipo === 'Transferencia' && entry.carteiraDestinoId === wallet.id)
+        .reduce((total, entry) => total + entry.valorTotal, 0);
+
+      const transferOut = walletTransactions
+        .filter((entry) => entry.tipo === 'Transferencia' && entry.carteiraId === wallet.id)
+        .reduce((total, entry) => total + entry.valorTotal, 0);
+
+      const transferencias = transferIn - transferOut;
+      const saldo = wallet.saldoInicial + receitas - despesas + transferencias;
+
+      return {
+        ...wallet,
+        receitas,
+        despesas,
+        transferencias,
+        saldo,
+      };
+    });
+
     const saldoTotal = carteiras.reduce((acc, c) => acc + c.saldo, 0);
 
     return HttpResponse.json({
       carteiras,
       saldoTotal,
     });
+  }),
+
+  // ===== Transaction / Transfer / Exchange =====
+
+  http.get('/history/v2/transactions', ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const url = new URL(request.url);
+    const period = parsePeriodRange(url);
+    const tipo = url.searchParams.get('tipo');
+    const categoriaId = url.searchParams.get('categoriaId');
+
+    let entries = transferTransactionDb.filter((entry) => isInsidePeriod(entry.dataLancamento, period));
+
+    if (tipo === 'Receita' || tipo === 'Despesa' || tipo === 'Transferencia') {
+      entries = entries.filter((entry) => entry.tipo === tipo);
+    }
+
+    if (categoriaId) {
+      entries = entries.filter((entry) => entry.categoriaId === categoriaId);
+    }
+
+    entries = [...entries].sort((a, b) =>
+      new Date(b.dataLancamento).getTime() - new Date(a.dataLancamento).getTime()
+    );
+
+    return HttpResponse.json({ transacoes: entries });
+  }),
+
+  http.get('/history/v2/exchange', ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const url = new URL(request.url);
+    const period = parsePeriodRange(url);
+    const lado = url.searchParams.get('lado');
+
+    let entries = exchangeTransactionDb.filter((entry) => isInsidePeriod(entry.dataLancamento, period));
+
+    if (lado === 'Compra' || lado === 'Venda') {
+      entries = entries.filter((entry) => entry.lado === lado);
+    }
+
+    entries = [...entries].sort((a, b) =>
+      new Date(b.dataLancamento).getTime() - new Date(a.dataLancamento).getTime()
+    );
+
+    return HttpResponse.json({ transacoes: entries });
+  }),
+
+  http.get('/transaction/v2/list', ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const id = new URL(request.url).searchParams.get('id');
+    const entry = transferTransactionDb.find((item) => item.id === id);
+
+    if (!entry) {
+      return HttpResponse.json({ message: 'Transação não encontrada.' }, { status: 404 });
+    }
+
+    return HttpResponse.json(entry);
+  }),
+
+  http.post('/transaction/v2/new', async ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const body = (await request.json()) as TransferUpsertRequest;
+    const categoria = categoriaDb.find((item) => item.id === body.categoriaId);
+
+    const created: TransferTransaction = {
+      id: crypto.randomUUID(),
+      carteiraId: body.carteiraId,
+      carteiraDestinoId: null,
+      tipo: body.tipo,
+      categoriaId: body.categoriaId,
+      categoriaNome: categoria?.nome ?? null,
+      valor: body.valor,
+      encargos: body.encargos,
+      valorTotal: body.valor + body.encargos,
+      efetivada: body.efetivada,
+      dataLancamento: body.dataLancamento,
+      dataVencimento: body.dataVencimento ?? null,
+      dataEfetivacao: body.dataEfetivacao ?? null,
+      observacoes: body.observacoes ?? null,
+      criadaEm: new Date().toISOString(),
+      atualizadaEm: null,
+    };
+
+    transferTransactionDb = [created, ...transferTransactionDb];
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put('/transaction/v2/edit', async ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const id = new URL(request.url).searchParams.get('id');
+    const body = (await request.json()) as TransferUpsertRequest;
+
+    const index = transferTransactionDb.findIndex((item) => item.id === id);
+    if (index === -1) {
+      return HttpResponse.json({ message: 'Transação não encontrada.' }, { status: 404 });
+    }
+
+    const categoria = categoriaDb.find((item) => item.id === body.categoriaId);
+
+    const current = transferTransactionDb[index];
+    const updated: TransferTransaction = {
+      ...current,
+      carteiraId: body.carteiraId,
+      tipo: body.tipo,
+      categoriaId: body.categoriaId,
+      categoriaNome: categoria?.nome ?? null,
+      valor: body.valor,
+      encargos: body.encargos,
+      valorTotal: body.valor + body.encargos,
+      efetivada: body.efetivada,
+      dataLancamento: body.dataLancamento,
+      dataVencimento: body.dataVencimento ?? null,
+      dataEfetivacao: body.dataEfetivacao ?? null,
+      observacoes: body.observacoes ?? null,
+      atualizadaEm: new Date().toISOString(),
+    };
+
+    transferTransactionDb[index] = updated;
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete('/transaction/v2/remove', ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const id = new URL(request.url).searchParams.get('id');
+    const index = transferTransactionDb.findIndex((item) => item.id === id);
+    if (index === -1) {
+      return HttpResponse.json({ message: 'Transação não encontrada.' }, { status: 404 });
+    }
+
+    transferTransactionDb.splice(index, 1);
+    return HttpResponse.json({ message: 'Transação removida com sucesso.' });
+  }),
+
+  http.post('/transfer/v2/new', async ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const body = (await request.json()) as WalletTransferUpsertRequest;
+    const created: TransferTransaction = {
+      id: crypto.randomUUID(),
+      carteiraId: body.carteiraId,
+      carteiraDestinoId: body.carteiraDestinoId,
+      tipo: 'Transferencia',
+      categoriaId: null,
+      categoriaNome: null,
+      valor: body.valor,
+      encargos: body.encargos,
+      valorTotal: body.valor + body.encargos,
+      efetivada: body.efetivada,
+      dataLancamento: body.dataLancamento,
+      dataVencimento: body.dataVencimento ?? null,
+      dataEfetivacao: body.dataEfetivacao ?? null,
+      observacoes: body.observacoes ?? null,
+      criadaEm: new Date().toISOString(),
+      atualizadaEm: null,
+    };
+
+    transferTransactionDb = [created, ...transferTransactionDb];
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put('/transfer/v2/edit', async ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const id = new URL(request.url).searchParams.get('id');
+    const body = (await request.json()) as WalletTransferUpsertRequest;
+
+    const index = transferTransactionDb.findIndex((item) => item.id === id && item.tipo === 'Transferencia');
+    if (index === -1) {
+      return HttpResponse.json({ message: 'Transferência não encontrada.' }, { status: 404 });
+    }
+
+    const current = transferTransactionDb[index];
+    const updated: TransferTransaction = {
+      ...current,
+      carteiraId: body.carteiraId,
+      carteiraDestinoId: body.carteiraDestinoId,
+      valor: body.valor,
+      encargos: body.encargos,
+      valorTotal: body.valor + body.encargos,
+      efetivada: body.efetivada,
+      dataLancamento: body.dataLancamento,
+      dataVencimento: body.dataVencimento ?? null,
+      dataEfetivacao: body.dataEfetivacao ?? null,
+      observacoes: body.observacoes ?? null,
+      atualizadaEm: new Date().toISOString(),
+    };
+
+    transferTransactionDb[index] = updated;
+    return HttpResponse.json(updated);
+  }),
+
+  http.get('/exchange/v2/list', ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const id = new URL(request.url).searchParams.get('id');
+    const entry = exchangeTransactionDb.find((item) => item.id === id);
+
+    if (!entry) {
+      return HttpResponse.json({ message: 'Operação não encontrada.' }, { status: 404 });
+    }
+
+    return HttpResponse.json(entry);
+  }),
+
+  http.post('/exchange/v2/new', async ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const body = (await request.json()) as ExchangeUpsertRequest;
+    const wallet = findWalletById(body.carteiraId);
+    if (!wallet || wallet.categoria !== 'Investimento') {
+      return HttpResponse.json(
+        { message: 'Carteira informada deve ser do tipo Investimento.' },
+        { status: 400 }
+      );
+    }
+
+    const created: ExchangeTransaction = {
+      id: crypto.randomUUID(),
+      carteiraId: body.carteiraId,
+      codigoAtivo: body.codigoAtivo,
+      lado: body.lado,
+      quantidade: body.quantidade,
+      precoUnitario: body.precoUnitario,
+      valor: body.quantidade * body.precoUnitario,
+      encargos: body.encargos,
+      valorTotal: body.quantidade * body.precoUnitario + body.encargos,
+      efetivada: body.efetivada,
+      dataLancamento: body.dataLancamento,
+      dataVencimento: body.dataVencimento ?? null,
+      dataEfetivacao: body.dataEfetivacao ?? null,
+      observacoes: body.observacoes ?? null,
+      criadaEm: new Date().toISOString(),
+      atualizadaEm: null,
+    };
+
+    exchangeTransactionDb = [created, ...exchangeTransactionDb];
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put('/exchange/v2/edit', async ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const id = new URL(request.url).searchParams.get('id');
+    const body = (await request.json()) as ExchangeUpsertRequest;
+    const wallet = findWalletById(body.carteiraId);
+    if (!wallet || wallet.categoria !== 'Investimento') {
+      return HttpResponse.json(
+        { message: 'Carteira informada deve ser do tipo Investimento.' },
+        { status: 400 }
+      );
+    }
+
+    const index = exchangeTransactionDb.findIndex((item) => item.id === id);
+
+    if (index === -1) {
+      return HttpResponse.json({ message: 'Operação não encontrada.' }, { status: 404 });
+    }
+
+    const current = exchangeTransactionDb[index];
+    const updated: ExchangeTransaction = {
+      ...current,
+      carteiraId: body.carteiraId,
+      codigoAtivo: body.codigoAtivo,
+      lado: body.lado,
+      quantidade: body.quantidade,
+      precoUnitario: body.precoUnitario,
+      valor: body.quantidade * body.precoUnitario,
+      encargos: body.encargos,
+      valorTotal: body.quantidade * body.precoUnitario + body.encargos,
+      efetivada: body.efetivada,
+      dataLancamento: body.dataLancamento,
+      dataVencimento: body.dataVencimento ?? null,
+      dataEfetivacao: body.dataEfetivacao ?? null,
+      observacoes: body.observacoes ?? null,
+      atualizadaEm: new Date().toISOString(),
+    };
+
+    exchangeTransactionDb[index] = updated;
+    return HttpResponse.json(updated);
+  }),
+
+  http.delete('/exchange/v2/remove', ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const id = new URL(request.url).searchParams.get('id');
+    const index = exchangeTransactionDb.findIndex((item) => item.id === id);
+
+    if (index === -1) {
+      return HttpResponse.json({ message: 'Operação não encontrada.' }, { status: 404 });
+    }
+
+    exchangeTransactionDb.splice(index, 1);
+    return HttpResponse.json({ message: 'Operação removida com sucesso.' });
   }),
 
   // ===== Categoria (category) =====

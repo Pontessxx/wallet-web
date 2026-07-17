@@ -10,6 +10,7 @@ import type { WalletFilterType, WalletType } from '@/types/carteira'
 import '@/styles/CarteiraForm.scss'
 import '@/styles/CarteiraTable.scss'
 import Money from '@/components/Money'
+import { useDateFilter } from '@/contexts/DateFilterContext'
 
 
 const Carteira = () => {
@@ -19,6 +20,7 @@ const Carteira = () => {
   const [saldoInicial, setSaldoInicial] = useState(0)
   const [tipo, setTipo] = useState<WalletType>('Corrente')
   const [filtroTipo, setFiltroTipo] = useState<WalletFilterType>('-')
+  const { periodQuery } = useDateFilter()
 
   const { openId, position, menuRef, registerTriggerRef, toggle, close } = useDropdownMenu()
 
@@ -35,7 +37,7 @@ const Carteira = () => {
 
   useEffect(() => {
     fetchSummary(filtroTipo === '-' ? undefined : filtroTipo)
-  }, [filtroTipo])
+  }, [filtroTipo, periodQuery])
 
   const listaCarteiras = carteiras ?? []
 

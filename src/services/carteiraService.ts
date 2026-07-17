@@ -6,6 +6,7 @@ import type {
   EditCarteiraRequest,
   WalletType,
 } from '@/types/carteira';
+import type { PeriodQuery } from '@/types/common';
 
 export const carteiraService = {
   createAccount: async (data: CreateCarteiraRequest, tipo: WalletType) => {
@@ -28,13 +29,14 @@ export const carteiraService = {
     });
   },
 
-  getSummary: async (tipo?: WalletType) => {
+  getSummary: async (tipo?: WalletType, period?: PeriodQuery) => {
+    const params = {
+      ...(tipo ? { categoria: tipo } : {}),
+      ...(period ?? {}),
+    };
+
     const response = await privateApi.get<CarteiraSummary>('/wallet/v2/summary', {
-      params: tipo
-        ? {
-            categoria: tipo,
-          }
-        : undefined,
+      params,
     });
     return response.data;
   },
