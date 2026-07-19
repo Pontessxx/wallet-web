@@ -30,6 +30,7 @@ const CategoriaTable = ({ categorias, isLoading, registerMenuBtnRef, onToggleMen
       <thead>
         <tr>
           <th>Nome</th>
+          <th>Tipo</th>
           <th></th>
         </tr>
       </thead>
@@ -44,6 +45,11 @@ const CategoriaTable = ({ categorias, isLoading, registerMenuBtnRef, onToggleMen
                 <span className="categoria-table__tag" style={{ borderColor: color }}>
                   <Icon size={14} color={color} />
                   <span>{categoria.nome}</span>
+                </span>
+              </td>
+              <td className="categoria-table__tipo">
+                <span className={`categoria-table__tipo-badge categoria-table__tipo-badge--${categoria.tipo.toLowerCase()}`}>
+                  {categoria.tipo}
                 </span>
               </td>
               <TableActionsCell

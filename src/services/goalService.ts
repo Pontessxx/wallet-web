@@ -1,8 +1,10 @@
 import { privateApi } from '@/api/api';
 import type {
+  CreateGoalAporteRequest,
   CreateGoalOptions,
   CreateGoalRequest,
   Goal,
+  GoalAporteListResponse,
   GoalListParams,
   GoalListResponse,
   UpdateGoalRequest,
@@ -43,5 +45,35 @@ export const goalService = {
         id,
       },
     });
+  },
+
+  createAporte: async (goalId: string, payload: CreateGoalAporteRequest) => {
+    const response = await privateApi.post<Goal>('/goal/v2/aporte/new', payload, {
+      params: {
+        id: goalId,
+      },
+    });
+
+    return response.data;
+  },
+
+  listAportes: async (goalId: string) => {
+    const response = await privateApi.get<GoalAporteListResponse>('/goal/v2/aporte/list', {
+      params: {
+        id: goalId,
+      },
+    });
+
+    return response.data.aportes ?? [];
+  },
+
+  removeAporte: async (aporteId: string) => {
+    const response = await privateApi.delete<Goal>('/goal/v2/aporte/remove', {
+      params: {
+        id: aporteId,
+      },
+    });
+
+    return response.data;
   },
 };

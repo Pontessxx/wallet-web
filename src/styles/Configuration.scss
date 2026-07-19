@@ -35,6 +35,11 @@
     &:last-child {
       border-bottom: none;
     }
+
+    dt,
+    dd {
+      margin: 0;
+    }
   }
 
   &__label {

@@ -3,6 +3,7 @@ import type { PeriodQuery } from '@/types/common';
 export interface Goal {
   id: string;
   nome: string;
+  iconKey: string;
   valorTotal: number;
   meses: number;
   valorMensal: number;
@@ -11,6 +12,8 @@ export interface Goal {
   percentualConcluido: number;
   usaAporteManual: boolean;
   carteiraId: string | null;
+  carteiraNome: string | null;
+  criadaEm: string;
 }
 
 export interface GoalListResponse {
@@ -26,6 +29,7 @@ export interface CreateGoalRequest {
   nome: string;
   valorTotal: number;
   meses: number;
+  iconKey?: string;
 }
 
 export interface CreateGoalOptions {
@@ -38,6 +42,27 @@ export interface UpdateGoalRequest {
   meses: number;
   carteiraId?: string | null;
   aporteManual?: number;
+  iconKey?: string;
+}
+
+export interface GoalAporte {
+  id: string;
+  valor: number;
+  data: string;
+  observacao: string | null;
+  recorrente: boolean;
+  criadoEm: string;
+}
+
+export interface GoalAporteListResponse {
+  aportes: GoalAporte[];
+}
+
+export interface CreateGoalAporteRequest {
+  valor: number;
+  data: string;
+  observacao?: string;
+  recorrente?: boolean;
 }
 
 export interface GoalContextType {
@@ -48,4 +73,7 @@ export interface GoalContextType {
   createGoal: (payload: CreateGoalRequest, options?: CreateGoalOptions) => Promise<Goal>;
   updateGoal: (id: string, payload: UpdateGoalRequest) => Promise<Goal>;
   removeGoal: (id: string) => Promise<void>;
+  createGoalAporte: (goalId: string, payload: CreateGoalAporteRequest) => Promise<Goal>;
+  fetchGoalAportes: (goalId: string) => Promise<GoalAporte[]>;
+  removeGoalAporte: (aporteId: string) => Promise<Goal>;
 }

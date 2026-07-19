@@ -26,6 +26,72 @@
     font-size: 0.9rem;
   }
 
+  &__tabs {
+    display: flex;
+    gap: 2rem;
+    border-bottom: 1px solid $border;
+
+    .history-page__tab:nth-child(1).history-page__tab--active {
+      color: $error;
+
+      &::after {
+        background: $error;
+      }
+    }
+
+    .history-page__tab:nth-child(2).history-page__tab--active {
+      color: $success;
+
+      &::after {
+        background: $success;
+      }
+    }
+
+    .history-page__tab:nth-child(3).history-page__tab--active {
+      color: $warning;
+
+      &::after {
+        background: $warning;
+      }
+    }
+
+    .history-page__tab:nth-child(4).history-page__tab--active {
+      color: $surface;
+
+      &::after {
+        background: $surface;
+      }
+    }
+  }
+
+  &__tab {
+    position: relative;
+    background: transparent;
+    border: none;
+    color: $text-secondary;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0.9rem 0.25rem;
+    cursor: pointer;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: $text;
+    }
+
+    &--active {
+      &::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -1px;
+        height: 2px;
+        border-radius: 2px;
+      }
+    }
+  }
+
   &__table {
     width: 100%;
     border-collapse: collapse;
@@ -58,10 +124,69 @@
     font-size: 0.9rem;
   }
 
-  &__wallet {
-    display: flex;
+  &__status {
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+
+    &--done {
+      color: $success;
+      background: rgba($success, 0.15);
+    }
+
+    &--pending {
+      color: $text-secondary;
+      background: $surface-hover;
+    }
+  }
+
+  &__description {
+    font-weight: 500;
+    color: $text;
+  }
+
+  &__category-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--badge-color);
+    background: color-mix(in srgb, var(--badge-color) 18%, transparent);
+    white-space: nowrap;
+
+    span[aria-hidden] {
+      opacity: 0.7;
+    }
+  }
+
+  &__wallet {
+    div {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      flex-direction: row;
+      gap: 0.7rem;
+    }
+  }
+
+  &__col-valor {
+    text-align: right;
+  }
+
+  &__col-acoes {
+    text-align: right;
+    width: 1%;
+    white-space: nowrap;
+
+    .history-page__action-btn + .history-page__action-btn {
+      margin-left: 0.4rem;
+    }
   }
 
   &__actions {
@@ -74,15 +199,22 @@
   &__action-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.35rem;
     border: 1px solid $border;
     border-radius: 6px;
     background: transparent;
-    color: $text;
+    color: $text-secondary;
     cursor: pointer;
     font-size: 0.85rem;
     font-weight: 600;
-    padding: 0.45rem 0.7rem;
+    padding: 0.4rem 0.55rem;
+    transition: color 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+      color: $text;
+      border-color: $text-secondary;
+    }
 
     &--success {
       border-color: rgba($success, 0.4);

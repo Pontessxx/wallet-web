@@ -91,9 +91,11 @@ const OperacaoBolsa = () => {
             {operations.map((operation) => (
               <tr key={operation.id}>
                 <td>{formatDate(operation.dataLancamento)}</td>
-                <td className="history-page__wallet">
-                  <BankLogo nome={resolveWalletName(operation.carteiraId)} size={20} />
-                  <span>{resolveWalletName(operation.carteiraId)}</span>
+                 <td className="history-page__wallet">
+                  <div>
+                    <BankLogo nome={resolveWalletName(operation.carteiraId)} size={24} />
+                    <span>{resolveWalletName(operation.carteiraId)}</span>
+                  </div>
                 </td>
                 <td>{operation.lado}</td>
                 <td>{operation.codigoAtivo}</td>

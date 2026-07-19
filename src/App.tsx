@@ -49,7 +49,9 @@ function App() {
                 element={
                   <TransactionProvider>
                     <TransferProvider>
-                      <Transaction />
+                      <CategoriaProvider>
+                        <Transaction />
+                      </CategoriaProvider>
                     </TransferProvider>
                   </TransactionProvider>
                 }
@@ -58,9 +60,13 @@ function App() {
               <Route
                 path="/objetivos"
                 element={
-                  <GoalProvider>
-                    <Objetivo />
-                  </GoalProvider>
+                  <CategoriaProvider>
+                    <CarteiraProvider>
+                      <GoalProvider>
+                        <Objetivo />
+                      </GoalProvider>
+                    </CarteiraProvider>
+                  </CategoriaProvider>
                 }
                 caseSensitive
               />

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { goalService } from '@/services/goalService';
 import { useDateFilter } from '@/contexts/DateFilterContext';
 import type {
+  CreateGoalAporteRequest,
   CreateGoalOptions,
   CreateGoalRequest,
   Goal,
@@ -91,6 +92,47 @@ const GoalProvider = ({ children }: GoalProviderProps) => {
     }
   };
 
+  const createGoalAporte = async (goalId: string, payload: CreateGoalAporteRequest) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const updated = await goalService.createAporte(goalId, payload);
+      setGoals((prev) => prev.map((goal) => (goal.id === updated.id ? updated : goal)));
+      return updated;
+    } catch (err) {
+      setError('Erro ao registrar deposito. Tente novamente.');
+      console.error('Erro ao registrar deposito:', err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchGoalAportes = async (goalId: string) => {
+    try {
+      return await goalService.listAportes(goalId);
+    } catch (err) {
+      setError('Erro ao carregar depositos.');
+      console.error('Erro ao carregar depositos:', err);
+      throw err;
+    }
+  };
+
+  const removeGoalAporte = async (aporteId: string) => {
+    setError(null);
+
+    try {
+      const updated = await goalService.removeAporte(aporteId);
+      setGoals((prev) => prev.map((goal) => (goal.id === updated.id ? updated : goal)));
+      return updated;
+    } catch (err) {
+      setError('Erro ao remover deposito. Tente novamente.');
+      console.error('Erro ao remover deposito:', err);
+      throw err;
+    }
+  };
+
   const value: GoalContextType = {
     goals,
     isLoading,
@@ -99,6 +141,9 @@ const GoalProvider = ({ children }: GoalProviderProps) => {
     createGoal,
     updateGoal,
     removeGoal,
+    createGoalAporte,
+    fetchGoalAportes,
+    removeGoalAporte,
   };
 
   return <GoalContext.Provider value={value}>{children}</GoalContext.Provider>;

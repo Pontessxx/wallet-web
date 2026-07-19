@@ -59,32 +59,65 @@
         }
     }
 
-    &__action-btn {
-        display: inline-flex;
+    &__actions-trigger {
+        display: flex;
         align-items: center;
-        gap: 0.35rem;
+        justify-content: center;
+        width: 2.15rem;
+        height: 2.15rem;
+        border: 1px solid rgba($info, 0.45);
+        border-radius: 50%;
+        background: transparent;
+        color: $info;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+
+        &:hover {
+            background-color: rgba($info, 0.12);
+        }
+    }
+
+    &__actions-menu {
+        position: fixed;
+        display: flex;
+        flex-direction: column;
+        min-width: 200px;
+        background-color: $surface;
         border: 1px solid $border;
+        border-radius: 8px;
+        box-shadow: $box-shadow-active;
+        padding: 0.35rem;
+        z-index: 1000;
+    }
+
+    &__actions-item {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        border: none;
         border-radius: 6px;
         background: transparent;
         color: $text;
         cursor: pointer;
-        font-size: 0.83rem;
+        font-size: 0.86rem;
         font-weight: 600;
-        padding: 0.42rem 0.66rem;
+        padding: 0.5rem 0.6rem;
+        text-align: left;
+
+        &:hover {
+            background-color: $surface-hover;
+        }
 
         &--success {
-            border-color: rgba($success, 0.45);
             color: $success;
         }
 
         &--danger {
-            border-color: rgba($error, 0.45);
             color: $error;
         }
 
         &--neutral {
-            border-color: rgba($info, 0.45);
-            color: $info;
+            color: $edit;
         }
     }
 
@@ -148,9 +181,9 @@
             font-weight: 500;
         }
 
-        input,
-        select,
-        textarea {
+        label > input,
+        label > select,
+        label > textarea {
             border: 1px solid $border;
             border-radius: 6px;
             background-color: $surface;
@@ -235,7 +268,8 @@
 }
 
 // ---------------------------------------------
-// Tema do react-datepicker (popup de mês/ano)
+// Tema do react-datepicker (usado no filtro de período do Header
+// como popup de mês/ano, e no Objetivo como calendário de dia).
 // !important é necessário aqui: o CSS padrão da lib
 // (react-datepicker/dist/react-datepicker.css) é importado
 // depois do nosso SCSS no bundle, então sobrescreve regras
@@ -243,6 +277,21 @@
 // ---------------------------------------------
 .react-datepicker-popper {
     z-index: 1000 !important;
+}
+
+// O <input> real fica dois níveis abaixo do wrapper que vira o flex item
+// (react-datepicker-wrapper > react-datepicker__input-container > input).
+// Sem isso, o input não acompanha o `stretch` do flexbox como os outros
+// campos do formulário e fica mais estreito/desalinhado.
+.react-datepicker-wrapper,
+.react-datepicker__input-container {
+    display: block !important;
+    width: 100%;
+}
+
+.react-datepicker__input-container input {
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .react-datepicker {
@@ -326,4 +375,52 @@
 
 .react-datepicker__month {
     margin: 0.5rem !important;
+}
+
+// grade de dias (calendário padrão, usado no Objetivo)
+.react-datepicker__day-name {
+    color: $text-secondary !important;
+    font-family: inherit !important;
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+}
+
+.react-datepicker__day {
+    color: $text !important;
+    font-family: inherit !important;
+    font-size: 0.85rem !important;
+    border-radius: 6px !important;
+
+    &:hover {
+        background-color: $surface-hover !important;
+        color: $text !important;
+    }
+
+    &--keyboard-selected {
+        background-color: transparent !important;
+        color: $text !important;
+    }
+
+    &--selected,
+    &--selected:hover {
+        background-color: $info !important;
+        color: $text-inverse !important;
+        font-weight: 700 !important;
+    }
+
+    &--today {
+        font-weight: 700 !important;
+        color: $info !important;
+    }
+
+    &--outside-month {
+        color: $text-disabled !important;
+    }
+
+    &--disabled,
+    &--disabled:hover {
+        color: $text-disabled !important;
+        background-color: transparent !important;
+        cursor: not-allowed !important;
+    }
 }

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import Modal from '@/components/Modal'
+import CurrencyInput from '@/components/CurrencyInput'
 import { useCarteira } from '@/contexts/CarteiraContext'
 import { useDropdownMenu } from '@/hooks/useDropdownMenu'
 import CarteiraTable from '@/components/CarteiraTable'
 import CarteiraActionsMenu from '@/components/CarteiraActionsMenu'
-import BankCombobox from '@/components/BankCombobox'
 import TableShell from '@/components/TableShell'
 import type { WalletFilterType, WalletType } from '@/types/carteira'
 import '@/styles/CarteiraForm.scss'
@@ -113,7 +113,7 @@ const Carteira = () => {
             <option value="Corrente">Corrente</option>
             <option value="Investimento">Investimento</option>
           </select>
-          <button className="carteira-page__add-btn" onClick={handleOpenCreate}>
+          <button type="button" className="carteira-page__add-btn" onClick={handleOpenCreate}>
             Adicionar Carteira
           </button>
         </div>
@@ -129,10 +129,24 @@ const Carteira = () => {
       </TableShell>
 
       <footer className="carteira-page__footer">
-        <span>Receitas: <strong  style={{ color: 'var(--color-success)' }}> <Money value={totalReceitas} /></strong></span>
-        <span>Despesas: <strong  style={{ color: 'var(--color-error)' }}><Money value={totalDespesas} /></strong></span>
-        <span>Saldo: <strong><Money value={saldoTotal ?? 0} /></strong></span>
-        <span>Previsto: <strong  style={{ color: 'var(--color-edit)' }}><Money value={totalPrevisto} /></strong></span>
+        <dl className="carteira-page__summary">
+          <div>
+            <dt>Receitas</dt>
+            <dd style={{ color: 'var(--color-success)' }}><Money value={totalReceitas} /></dd>
+          </div>
+          <div>
+            <dt>Despesas</dt>
+            <dd style={{ color: 'var(--color-error)' }}><Money value={totalDespesas} /></dd>
+          </div>
+          <div>
+            <dt>Saldo</dt>
+            <dd><Money value={saldoTotal ?? 0} /></dd>
+          </div>
+          <div>
+            <dt>Previsto</dt>
+            <dd style={{ color: 'var(--color-edit)' }}><Money value={totalPrevisto} /></dd>
+          </div>
+        </dl>
       </footer>
 
       <CarteiraActionsMenu
@@ -153,10 +167,14 @@ const Carteira = () => {
             <label className="carteira-form__label">Nome</label>
 
             <div className="carteira-form__input-wrapper">
-              <BankCombobox
+              <input
                 id="nome"
+                className="carteira-form__input"
                 value={nome}
-                onChange={setNome}
+                type="text"
+                autoComplete="off"
+                placeholder="Ex: Bradesco, Nomad, XP..."
+                onChange={(e) => setNome(e.target.value)}
               />
             </div>
           </div>
@@ -178,20 +196,18 @@ const Carteira = () => {
             <label className="carteira-form__label" htmlFor="saldoInicial">
               Saldo inicial{editingId && ' (não editável)'}
             </label>
-            <input
+            <CurrencyInput
               id="saldoInicial"
-              className="carteira-form__input"
-              type="number"
               value={saldoInicial}
-              onChange={(e) => setSaldoInicial(Number(e.target.value))}
-              min={0}
+              onChange={setSaldoInicial}
               disabled={!!editingId}
             />
           </div>
 
-          {error && <p className="carteira-form__error">{error}</p>}
+          {error && <p className="carteira-form__error" role="alert">{error}</p>}
 
           <button
+            type="button"
             className="carteira-form__submit"
             onClick={handleSubmit}
             disabled={isLoading || !nome.trim()}

@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from "@/contexts/AuthContext";
 import { authService } from "@/services/authService";
 import '@/styles/Header.scss';
-import { ArrowRightLeft, ChevronLeft, ChevronRight, Eye, EyeOff, Minus, Plus } from 'lucide-react';
+import { ArrowRightLeft, ChevronLeft, ChevronRight, Eye, EyeOff, Minus, Plus, TrendingUp } from 'lucide-react';
 import { useVisibility } from '@/contexts/VisibilityContext';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useDateFilter } from '@/contexts/DateFilterContext';
+import { useDropdownMenu } from '@/hooks/useDropdownMenu';
 import Modal from '@/components/Modal';
+import CurrencyInput from '@/components/CurrencyInput';
 import { carteiraService } from '@/services/carteiraService';
 import { categoriaService } from '@/services/categoriaService';
 import { transferService } from '@/services/transferService';
@@ -25,7 +28,20 @@ const toDateInputValue = (date = new Date()) => {
     return new Date(date.getTime() - timezoneOffsetMs).toISOString().slice(0, 10);
 };
 
+// O backend espera um DateTime UTC (timestamp with time zone); o input type="date"
+// só fornece "AAAA-MM-DD", que precisa virar um ISO string completo antes do envio.
+const toUtcDateTime = (dateOnlyValue: string) => new Date(`${dateOnlyValue}T00:00:00.000Z`).toISOString();
+
 type HeaderAction = 'Receita' | 'Despesa' | 'Transferencia' | 'OperacaoBolsa';
+
+const HEADER_ACTIONS: Array<{ key: HeaderAction; label: string; icon: typeof Plus; className: string }> = [
+    { key: 'Receita', label: 'Receita', icon: Plus, className: 'app-header__actions-item--success' },
+    { key: 'Despesa', label: 'Despesa', icon: Minus, className: 'app-header__actions-item--danger' },
+    { key: 'Transferencia', label: 'Transferencia', icon: ArrowRightLeft, className: 'app-header__actions-item--neutral' },
+    { key: 'OperacaoBolsa', label: 'Operacao Bolsa', icon: TrendingUp, className: 'app-header__actions-item--success' },
+];
+
+const HEADER_ACTIONS_MENU_ID = 'header-actions';
 
 const Header = () => {
     const navigate = useNavigate();
@@ -46,6 +62,15 @@ const Header = () => {
     const [walletOptions, setWalletOptions] = useState<Array<{ id: string; nome: string }>>([]);
     const [categoryOptions, setCategoryOptions] = useState<Array<{ id: string; nome: string }>>([]);
     const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
+
+    const {
+        openId: openActionsMenuId,
+        position: actionsMenuPosition,
+        menuRef: actionsMenuRef,
+        registerTriggerRef: registerActionsTriggerRef,
+        toggle: toggleActionsMenu,
+        close: closeActionsMenu,
+    } = useDropdownMenu(200);
 
     const [carteiraId, setCarteiraId] = useState('');
     const [carteiraDestinoId, setCarteiraDestinoId] = useState('');
@@ -137,9 +162,11 @@ const Header = () => {
             try {
                 const categories = await categoriaService.list();
                 if (!isMounted) return;
-                const mapped = categories.map((categoria) => ({ id: categoria.id, nome: categoria.nome }));
+                const mapped = categories
+                    .filter((categoria) => categoria.tipo === activeAction)
+                    .map((categoria) => ({ id: categoria.id, nome: categoria.nome }));
                 setCategoryOptions(mapped);
-                setCategoriaId((prev) => prev || mapped[0]?.id || '');
+                setCategoriaId(mapped[0]?.id || '');
             } catch {
                 if (isMounted) {
                     setCategoryOptions([]);
@@ -240,7 +267,7 @@ const Header = () => {
                     precoUnitario,
                     encargos,
                     efetivada: true,
-                    dataLancamento,
+                    dataLancamento: toUtcDateTime(dataLancamento),
                     observacoes: observacoes.trim() || null,
                 });
                 dispatchRefreshEvent('wallet:exchange-updated');
@@ -251,7 +278,7 @@ const Header = () => {
                     valor,
                     encargos,
                     efetivada: true,
-                    dataLancamento,
+                    dataLancamento: toUtcDateTime(dataLancamento),
                     observacoes: observacoes.trim() || null,
                 });
                 dispatchRefreshEvent('wallet:transactions-updated');
@@ -263,7 +290,7 @@ const Header = () => {
                     valor,
                     encargos,
                     efetivada: true,
-                    dataLancamento,
+                    dataLancamento: toUtcDateTime(dataLancamento),
                     observacoes: observacoes.trim() || null,
                 });
                 dispatchRefreshEvent('wallet:transactions-updated');
@@ -365,22 +392,47 @@ const Header = () => {
                 )}
             </div>
 
-            <div className="app-header__actions">
-                <button type="button" className="app-header__action-btn app-header__action-btn--success" onClick={() => handleOpenActionModal('Receita')}>
-                    <Plus size={15} /> Receita
-                </button>
-                <button type="button" className="app-header__action-btn app-header__action-btn--danger" onClick={() => handleOpenActionModal('Despesa')}>
-                    <Minus size={15} /> Despesa
-                </button>
-                <button type="button" className="app-header__action-btn app-header__action-btn--neutral" onClick={() => handleOpenActionModal('Transferencia')}>
-                    <ArrowRightLeft size={15} /> Transferencia
-                </button>
-                <button type="button" className="app-header__action-btn app-header__action-btn--success" onClick={() => handleOpenActionModal('OperacaoBolsa')}>
-                    <Plus size={15} /> Operacao Bolsa
-                </button>
-            </div>
-
             <div className="app-header__user">
+
+                <div className="app-header__actions">
+                    <button
+                        type="button"
+                        ref={registerActionsTriggerRef(HEADER_ACTIONS_MENU_ID)}
+                        className="app-header__actions-trigger"
+                        aria-haspopup="menu"
+                        aria-expanded={openActionsMenuId === HEADER_ACTIONS_MENU_ID}
+                        aria-label="Nova movimentação"
+                        onClick={() => toggleActionsMenu(HEADER_ACTIONS_MENU_ID)}
+                    >
+                        <Plus size={18} />
+                    </button>
+
+                    {openActionsMenuId === HEADER_ACTIONS_MENU_ID && actionsMenuPosition && createPortal(
+                        <div
+                            ref={actionsMenuRef}
+                            className="app-header__actions-menu"
+                            role="menu"
+                            style={{ top: actionsMenuPosition.top, left: actionsMenuPosition.left }}
+                        >
+                            {HEADER_ACTIONS.map(({ key, label, icon: Icon, className }) => (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    role="menuitem"
+                                    className={`app-header__actions-item ${className}`}
+                                    onClick={() => {
+                                        closeActionsMenu();
+                                        handleOpenActionModal(key);
+                                    }}
+                                >
+                                    <Icon size={16} />
+                                    <span>{label}</span>
+                                </button>
+                            ))}
+                        </div>,
+                        document.body
+                    )}
+                </div>
 
                 <button
                     className="app-header__visibility"
@@ -487,37 +539,19 @@ const Header = () => {
 
                             <label>
                                 Preco unitario
-                                <input
-                                    type="number"
-                                    min={0}
-                                    step="0.01"
-                                    value={precoUnitario}
-                                    onChange={(event) => setPrecoUnitario(Number(event.target.value))}
-                                />
+                                <CurrencyInput value={precoUnitario} onChange={setPrecoUnitario} />
                             </label>
                         </>
                     ) : (
                         <>
                             <label>
                                 Valor
-                                <input
-                                    type="number"
-                                    min={0}
-                                    step="0.01"
-                                    value={valor}
-                                    onChange={(event) => setValor(Number(event.target.value))}
-                                />
+                                <CurrencyInput value={valor} onChange={setValor} />
                             </label>
 
                             <label>
                                 Encargos
-                                <input
-                                    type="number"
-                                    min={0}
-                                    step="0.01"
-                                    value={encargos}
-                                    onChange={(event) => setEncargos(Number(event.target.value))}
-                                />
+                                <CurrencyInput value={encargos} onChange={setEncargos} />
                             </label>
                         </>
                     )}

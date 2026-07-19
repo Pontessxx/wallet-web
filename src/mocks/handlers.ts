@@ -1,9 +1,10 @@
 import { http, HttpResponse } from 'msw';
 import type { Carteira, WalletType } from '@/types/carteira';
-import type { Categoria, CategoriaIconKey } from '@/types/categoria';
+import type { Categoria, CategoriaIconKey, CategoriaTipo } from '@/types/categoria';
 import type { TransferTransaction, TransferUpsertRequest } from '@/types/transfer';
 import type { ExchangeTransaction, ExchangeUpsertRequest } from '@/types/exchange';
 import type { WalletTransferUpsertRequest } from '@/types/transaction';
+import type { Goal, GoalAporte } from '@/types/goal';
 
 const REFRESH_COOKIE_NAME = 'refreshToken';
 
@@ -125,20 +126,39 @@ let categoriaDb: Categoria[] = [
     nome: 'Alimentação',
     iconKey: 'utensils',
     colorHex: '#F97316',
+    tipo: 'Despesa',
   },
   {
     id: 'cat-mock-2',
     nome: 'Transporte',
     iconKey: 'car',
     colorHex: '#3B82F6',
+    tipo: 'Despesa',
   },
   {
     id: 'cat-mock-3',
     nome: 'Lazer',
     iconKey: 'gamepad-2',
     colorHex: '#8B5CF6',
+    tipo: 'Despesa',
+  },
+  {
+    id: 'cat-mock-4',
+    nome: 'Salário',
+    iconKey: 'briefcase',
+    colorHex: '#06B6D4',
+    tipo: 'Receita',
   },
 ];
+
+let goalDb: Goal[] = [
+  { id: 'goal-mock-1', nome: 'GARMIN 570 music', iconKey: 'watch', valorTotal: 2953.84, meses: 6, valorMensal: 408.97, valorAportado: 500, valorRestante: 2453.84, percentualConcluido: 17, usaAporteManual: true, carteiraId: null, carteiraNome: null, criadaEm: '2026-01-18T00:00:00.000Z' },
+  { id: 'goal-mock-2', nome: 'Viagem', iconKey: 'plane', valorTotal: 17000, meses: 18, valorMensal: 819.3, valorAportado: 2252.59, valorRestante: 14747.41, percentualConcluido: 13, usaAporteManual: true, carteiraId: null, carteiraNome: null, criadaEm: '2026-01-18T00:00:00.000Z' },
+  { id: 'goal-mock-3', nome: 'Pós graduação', iconKey: 'graduation-cap', valorTotal: 13500, meses: 12, valorMensal: 1125, valorAportado: 13545.21, valorRestante: 0, percentualConcluido: 100, usaAporteManual: true, carteiraId: null, carteiraNome: null, criadaEm: '2025-07-18T00:00:00.000Z' },
+  { id: 'goal-mock-4', nome: 'Relógio', iconKey: 'target', valorTotal: 1700, meses: 4, valorMensal: 425, valorAportado: 1699.99, valorRestante: 0, percentualConcluido: 100, usaAporteManual: true, carteiraId: null, carteiraNome: null, criadaEm: '2025-11-18T00:00:00.000Z' },
+];
+
+const goalAporteDb: Record<string, GoalAporte[]> = {};
 
 // "Banco" em memória de usuários válidos (mock simplificado pro fluxo de senha)
 const userDb: Record<string, { password: string }> = {
@@ -203,8 +223,8 @@ let transferTransactionDb: TransferTransaction[] = [
     carteiraId: 'mock-2',
     carteiraDestinoId: null,
     tipo: 'Receita',
-    categoriaId: 'cat-mock-1',
-    categoriaNome: 'Alimentação',
+    categoriaId: 'cat-mock-4',
+    categoriaNome: 'Salário',
     valor: 2500,
     encargos: 0,
     valorTotal: 2500,
@@ -1081,11 +1101,19 @@ export const handlers = [
       nome: string;
       iconKey?: CategoriaIconKey;
       colorHex?: string;
+      tipo?: CategoriaTipo;
     };
 
     if (!body.nome?.trim()) {
       return HttpResponse.json(
         { message: 'Nome é obrigatório.' },
+        { status: 400 }
+      );
+    }
+
+    if (body.tipo && body.tipo !== 'Despesa' && body.tipo !== 'Receita') {
+      return HttpResponse.json(
+        { message: "Tipo inválido. Use 'Receita' ou 'Despesa'." },
         { status: 400 }
       );
     }
@@ -1109,6 +1137,7 @@ export const handlers = [
       nome: body.nome.trim(),
       iconKey: body.iconKey ?? DEFAULT_CATEGORIA_ICON,
       colorHex: body.colorHex ?? DEFAULT_CATEGORIA_COLOR,
+      tipo: body.tipo ?? 'Despesa',
     };
 
     categoriaDb.push(novaCategoria);
@@ -1140,5 +1169,231 @@ export const handlers = [
     categoriaDb = categoriaDb.filter((c) => c.id !== id);
 
     return HttpResponse.json({ message: 'Categoria removida com sucesso.' });
+  }),
+
+  http.get('/goal/v2/list', ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    return HttpResponse.json({ objetivos: goalDb });
+  }),
+
+  http.post('/goal/v2/new', async ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const body = (await request.json()) as {
+      nome: string;
+      valorTotal: number;
+      meses: number;
+      iconKey?: string;
+    };
+
+    if (!body.nome?.trim() || !body.valorTotal || !body.meses) {
+      return HttpResponse.json(
+        { message: 'Nome, valor total e meses são obrigatórios.' },
+        { status: 400 }
+      );
+    }
+
+    const carteiraId = new URL(request.url).searchParams.get('carteiraId');
+    const carteira = carteiraId ? findWalletById(carteiraId) : undefined;
+
+    const novoObjetivo: Goal = {
+      id: crypto.randomUUID(),
+      nome: body.nome.trim(),
+      iconKey: body.iconKey?.trim() || 'target',
+      valorTotal: body.valorTotal,
+      meses: body.meses,
+      valorMensal: body.valorTotal / body.meses,
+      valorAportado: carteira?.saldo ?? 0,
+      valorRestante: Math.max(body.valorTotal - (carteira?.saldo ?? 0), 0),
+      percentualConcluido: Math.min(Math.round(((carteira?.saldo ?? 0) / body.valorTotal) * 100), 100),
+      usaAporteManual: !carteiraId,
+      carteiraId: carteiraId || null,
+      carteiraNome: carteira?.nome ?? null,
+      criadaEm: new Date().toISOString(),
+    };
+
+    goalDb = [novoObjetivo, ...goalDb];
+    goalAporteDb[novoObjetivo.id] = [];
+
+    return HttpResponse.json(novoObjetivo, { status: 201 });
+  }),
+
+  http.put('/goal/v2/edit', async ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const id = new URL(request.url).searchParams.get('id');
+    const existing = goalDb.find((goal) => goal.id === id);
+
+    if (!existing) {
+      return HttpResponse.json({ message: 'Objetivo não encontrado.' }, { status: 404 });
+    }
+
+    const body = (await request.json()) as {
+      nome: string;
+      valorTotal: number;
+      meses: number;
+      carteiraId?: string | null;
+      aporteManual?: number;
+      iconKey?: string;
+    };
+
+    const carteira = body.carteiraId ? findWalletById(body.carteiraId) : undefined;
+    const valorAportado = body.carteiraId
+      ? (carteira?.saldo ?? 0)
+      : existing.valorAportado + (body.aporteManual ?? 0);
+
+    const atualizado: Goal = {
+      ...existing,
+      nome: body.nome.trim(),
+      iconKey: body.iconKey?.trim() || existing.iconKey,
+      valorTotal: body.valorTotal,
+      meses: body.meses,
+      valorMensal: body.valorTotal / body.meses,
+      valorAportado,
+      valorRestante: Math.max(body.valorTotal - valorAportado, 0),
+      percentualConcluido: Math.min(Math.round((valorAportado / body.valorTotal) * 100), 100),
+      usaAporteManual: !body.carteiraId,
+      carteiraId: body.carteiraId ?? null,
+      carteiraNome: carteira?.nome ?? null,
+    };
+
+    goalDb = goalDb.map((goal) => (goal.id === id ? atualizado : goal));
+
+    return HttpResponse.json(atualizado);
+  }),
+
+  http.delete('/goal/v2/remove', ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const id = new URL(request.url).searchParams.get('id');
+    const exists = goalDb.some((goal) => goal.id === id);
+
+    if (!exists) {
+      return HttpResponse.json({ message: 'Objetivo não encontrado.' }, { status: 404 });
+    }
+
+    goalDb = goalDb.filter((goal) => goal.id !== id);
+    delete goalAporteDb[id!];
+
+    return HttpResponse.json({ message: 'Objetivo removido com sucesso.' });
+  }),
+
+  http.post('/goal/v2/aporte/new', async ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const id = new URL(request.url).searchParams.get('id');
+    const goal = goalDb.find((g) => g.id === id);
+
+    if (!goal) {
+      return HttpResponse.json({ message: 'Objetivo não encontrado.' }, { status: 404 });
+    }
+
+    if (goal.carteiraId) {
+      return HttpResponse.json(
+        { message: 'Objetivo atrelado a carteira usa o saldo da carteira automaticamente.' },
+        { status: 400 }
+      );
+    }
+
+    const body = (await request.json()) as {
+      valor: number;
+      data: string;
+      observacao?: string;
+      recorrente?: boolean;
+    };
+
+    if (!body.valor || body.valor <= 0) {
+      return HttpResponse.json({ message: 'Valor do depósito deve ser maior que zero.' }, { status: 400 });
+    }
+
+    const aporte: GoalAporte = {
+      id: crypto.randomUUID(),
+      valor: body.valor,
+      data: body.data,
+      observacao: body.observacao?.trim() || null,
+      recorrente: !!body.recorrente,
+      criadoEm: new Date().toISOString(),
+    };
+
+    goalAporteDb[goal.id] = [aporte, ...(goalAporteDb[goal.id] ?? [])];
+
+    const valorAportado = goal.valorAportado + body.valor;
+    const atualizado: Goal = {
+      ...goal,
+      valorAportado,
+      valorRestante: Math.max(goal.valorTotal - valorAportado, 0),
+      percentualConcluido: Math.min(Math.round((valorAportado / goal.valorTotal) * 100), 100),
+    };
+
+    goalDb = goalDb.map((g) => (g.id === goal.id ? atualizado : g));
+
+    return HttpResponse.json(atualizado, { status: 201 });
+  }),
+
+  http.get('/goal/v2/aporte/list', ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const id = new URL(request.url).searchParams.get('id');
+    const exists = goalDb.some((g) => g.id === id);
+
+    if (!exists) {
+      return HttpResponse.json({ message: 'Objetivo não encontrado.' }, { status: 404 });
+    }
+
+    const aportes = [...(goalAporteDb[id!] ?? [])].sort(
+      (a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()
+    );
+
+    return HttpResponse.json({ aportes });
+  }),
+
+  http.delete('/goal/v2/aporte/remove', ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const aporteId = new URL(request.url).searchParams.get('id');
+    const goal = goalDb.find((g) => (goalAporteDb[g.id] ?? []).some((a) => a.id === aporteId));
+
+    if (!goal) {
+      return HttpResponse.json({ message: 'Depósito não encontrado.' }, { status: 404 });
+    }
+
+    const aporte = goalAporteDb[goal.id]!.find((a) => a.id === aporteId)!;
+    goalAporteDb[goal.id] = goalAporteDb[goal.id]!.filter((a) => a.id !== aporteId);
+
+    const valorAportado = Math.max(goal.valorAportado - aporte.valor, 0);
+    const atualizado: Goal = {
+      ...goal,
+      valorAportado,
+      valorRestante: Math.max(goal.valorTotal - valorAportado, 0),
+      percentualConcluido: goal.valorTotal > 0
+        ? Math.min(Math.round((valorAportado / goal.valorTotal) * 100), 100)
+        : 0,
+    };
+
+    goalDb = goalDb.map((g) => (g.id === goal.id ? atualizado : g));
+
+    return HttpResponse.json(atualizado);
   }),
 ];
