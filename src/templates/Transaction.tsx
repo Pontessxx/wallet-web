@@ -376,20 +376,31 @@ const Transaction = () => {
               return (
                 <tr key={entry.id}>
                   <td>
-                    <button
-                      type="button"
+                    <span
                       className={`history-page__status${
                         entry.efetivada
                           ? ' history-page__status--done'
                           : ' history-page__status--pending'
                       }`}
-                      onClick={() => handleToggleEfetivada(entry)}
-                      disabled={togglingId === entry.id}
+                      onClick={() => {
+                        if (togglingId === entry.id) return;
+                        handleToggleEfetivada(entry);
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(event) => {
+                        if (togglingId === entry.id) return;
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          handleToggleEfetivada(entry);
+                        }
+                      }}
+                      aria-disabled={togglingId === entry.id}
                       aria-label={entry.efetivada ? 'Marcar como pendente' : 'Marcar como efetivada'}
                       title={entry.efetivada ? 'Efetivada · clique para marcar como pendente' : 'Pendente · clique para efetivar'}
                     >
                       {entry.efetivada ? <Check size={14} /> : <Clock size={14} />}
-                    </button>
+                    </span>
                   </td>
                   <td className="history-page__description">
                     {entry.observacoes || entry.categoriaNome || '-'}
