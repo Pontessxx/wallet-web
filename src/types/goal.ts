@@ -10,7 +10,6 @@ export interface Goal {
   valorAportado: number;
   valorRestante: number;
   percentualConcluido: number;
-  usaAporteManual: boolean;
   carteiraId: string | null;
   carteiraNome: string | null;
   criadaEm: string;
@@ -41,7 +40,6 @@ export interface UpdateGoalRequest {
   valorTotal: number;
   meses: number;
   carteiraId?: string | null;
-  aporteManual?: number;
   iconKey?: string;
 }
 
@@ -52,6 +50,7 @@ export interface GoalAporte {
   observacao: string | null;
   recorrente: boolean;
   criadoEm: string;
+  transacaoId: string | null;
 }
 
 export interface GoalAporteListResponse {

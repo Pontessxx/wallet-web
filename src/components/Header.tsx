@@ -17,6 +17,7 @@ import { categoriaService } from '@/services/categoriaService';
 import { transferService } from '@/services/transferService';
 import { transactionService } from '@/services/transactionService';
 import { exchangeService } from '@/services/exchangeService';
+import { goalService } from '@/services/goalService';
 
 const MONTH_FULL_NAMES = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -61,6 +62,7 @@ const Header = () => {
     const [activeAction, setActiveAction] = useState<HeaderAction | null>(null);
     const [walletOptions, setWalletOptions] = useState<Array<{ id: string; nome: string }>>([]);
     const [categoryOptions, setCategoryOptions] = useState<Array<{ id: string; nome: string }>>([]);
+    const [goalOptions, setGoalOptions] = useState<Array<{ id: string; nome: string }>>([]);
     const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
 
     const {
@@ -75,10 +77,12 @@ const Header = () => {
     const [carteiraId, setCarteiraId] = useState('');
     const [carteiraDestinoId, setCarteiraDestinoId] = useState('');
     const [categoriaId, setCategoriaId] = useState('');
+    const [objetivoId, setObjetivoId] = useState('');
     const [valor, setValor] = useState(0);
     const [encargos, setEncargos] = useState(0);
     const [dataLancamento, setDataLancamento] = useState(toDateInputValue());
     const [observacoes, setObservacoes] = useState('');
+    const [efetivada, setEfetivada] = useState(true);
 
     const [lado, setLado] = useState<'Compra' | 'Venda'>('Compra');
     const [codigoAtivo, setCodigoAtivo] = useState('');
@@ -174,8 +178,27 @@ const Header = () => {
             }
         };
 
+        const loadGoals = async () => {
+            if (activeAction !== 'Receita') {
+                setGoalOptions([]);
+                setObjetivoId('');
+                return;
+            }
+
+            try {
+                const goals = await goalService.list();
+                if (!isMounted) return;
+                setGoalOptions(goals.map((goal) => ({ id: goal.id, nome: goal.nome })));
+            } catch {
+                if (isMounted) {
+                    setGoalOptions([]);
+                }
+            }
+        };
+
         void loadWallets();
         void loadCategories();
+        void loadGoals();
 
         return () => {
             isMounted = false;
@@ -186,10 +209,12 @@ const Header = () => {
         setCarteiraId(walletOptions[0]?.id ?? '');
         setCarteiraDestinoId(walletOptions[1]?.id ?? walletOptions[0]?.id ?? '');
         setCategoriaId(categoryOptions[0]?.id ?? '');
+        setObjetivoId('');
         setValor(0);
         setEncargos(0);
         setDataLancamento(toDateInputValue());
         setObservacoes('');
+        setEfetivada(false);
         setLado('Compra');
         setCodigoAtivo('');
         setQuantidade(0);
@@ -266,7 +291,7 @@ const Header = () => {
                     quantidade,
                     precoUnitario,
                     encargos,
-                    efetivada: true,
+                    efetivada,
                     dataLancamento: toUtcDateTime(dataLancamento),
                     observacoes: observacoes.trim() || null,
                 });
@@ -277,7 +302,7 @@ const Header = () => {
                     carteiraDestinoId,
                     valor,
                     encargos,
-                    efetivada: true,
+                    efetivada,
                     dataLancamento: toUtcDateTime(dataLancamento),
                     observacoes: observacoes.trim() || null,
                 });
@@ -289,9 +314,10 @@ const Header = () => {
                     categoriaId,
                     valor,
                     encargos,
-                    efetivada: true,
+                    efetivada,
                     dataLancamento: toUtcDateTime(dataLancamento),
                     observacoes: observacoes.trim() || null,
+                    objetivoId: activeAction === 'Receita' && objetivoId ? objetivoId : null,
                 });
                 dispatchRefreshEvent('wallet:transactions-updated');
             }
@@ -506,6 +532,18 @@ const Header = () => {
                         </label>
                     )}
 
+                    {activeAction === 'Receita' && (
+                        <label>
+                            Objetivo (opcional)
+                            <select value={objetivoId} onChange={(event) => setObjetivoId(event.target.value)}>
+                                <option value="">Nenhum</option>
+                                {goalOptions.map((goal) => (
+                                    <option key={goal.id} value={goal.id}>{goal.nome}</option>
+                                ))}
+                            </select>
+                        </label>
+                    )}
+
                     {activeAction === 'OperacaoBolsa' ? (
                         <>
                             <label>
@@ -572,6 +610,15 @@ const Header = () => {
                             onChange={(event) => setObservacoes(event.target.value)}
                             rows={3}
                         />
+                    </label>
+
+                    <label className="app-header__checkbox">
+                        <input
+                            type="checkbox"
+                            checked={efetivada}
+                            onChange={(event) => setEfetivada(event.target.checked)}
+                        />
+                        {' '}Efetivada
                     </label>
 
                     {formError && <p className="app-header__form-error">{formError}</p>}

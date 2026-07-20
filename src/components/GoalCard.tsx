@@ -31,19 +31,17 @@ const GoalCard = ({ goal, registerMenuBtnRef, onToggleMenu, onDeposit }: GoalCar
         </span>
         <h2 className="goal-card__name">{goal.nome}</h2>
 
-        {!goal.carteiraId && (
-          <button
-            type="button"
-            className="goal-card__deposit-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDeposit(goal);
-            }}
-            aria-label="Depositar"
-          >
-            +
-          </button>
-        )}
+        <button
+          type="button"
+          className="goal-card__deposit-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDeposit(goal);
+          }}
+          aria-label="Depositar"
+        >
+          +
+        </button>
 
         <button
           type="button"

@@ -19,6 +19,7 @@ export interface TransferTransaction {
   observacoes: string | null;
   criadaEm: string;
   atualizadaEm: string | null;
+  objetivoId: string | null;
 }
 
 export interface TransferHistoryResponse {
@@ -41,6 +42,7 @@ export interface TransferUpsertRequest {
   dataVencimento?: string | null;
   dataEfetivacao?: string | null;
   observacoes?: string | null;
+  objetivoId?: string | null;
 }
 
 export interface TransferContextType {

@@ -34,4 +34,5 @@ export interface TransactionContextType {
   error: string | null;
   createTransfer: (payload: WalletTransferUpsertRequest) => Promise<WalletTransferTransaction>;
   updateTransfer: (id: string, payload: WalletTransferUpsertRequest) => Promise<WalletTransferTransaction>;
+  removeTransfer: (id: string) => Promise<void>;
 }

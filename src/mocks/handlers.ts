@@ -152,13 +152,53 @@ let categoriaDb: Categoria[] = [
 ];
 
 let goalDb: Goal[] = [
-  { id: 'goal-mock-1', nome: 'GARMIN 570 music', iconKey: 'watch', valorTotal: 2953.84, meses: 6, valorMensal: 408.97, valorAportado: 500, valorRestante: 2453.84, percentualConcluido: 17, usaAporteManual: true, carteiraId: null, carteiraNome: null, criadaEm: '2026-01-18T00:00:00.000Z' },
-  { id: 'goal-mock-2', nome: 'Viagem', iconKey: 'plane', valorTotal: 17000, meses: 18, valorMensal: 819.3, valorAportado: 2252.59, valorRestante: 14747.41, percentualConcluido: 13, usaAporteManual: true, carteiraId: null, carteiraNome: null, criadaEm: '2026-01-18T00:00:00.000Z' },
-  { id: 'goal-mock-3', nome: 'Pós graduação', iconKey: 'graduation-cap', valorTotal: 13500, meses: 12, valorMensal: 1125, valorAportado: 13545.21, valorRestante: 0, percentualConcluido: 100, usaAporteManual: true, carteiraId: null, carteiraNome: null, criadaEm: '2025-07-18T00:00:00.000Z' },
-  { id: 'goal-mock-4', nome: 'Relógio', iconKey: 'target', valorTotal: 1700, meses: 4, valorMensal: 425, valorAportado: 1699.99, valorRestante: 0, percentualConcluido: 100, usaAporteManual: true, carteiraId: null, carteiraNome: null, criadaEm: '2025-11-18T00:00:00.000Z' },
+  { id: 'goal-mock-1', nome: 'GARMIN 570 music', iconKey: 'watch', valorTotal: 2953.84, meses: 6, valorMensal: 408.97, valorAportado: 500, valorRestante: 2453.84, percentualConcluido: 17, carteiraId: null, carteiraNome: null, criadaEm: '2026-01-18T00:00:00.000Z' },
+  { id: 'goal-mock-2', nome: 'Viagem', iconKey: 'plane', valorTotal: 17000, meses: 18, valorMensal: 819.3, valorAportado: 2252.59, valorRestante: 14747.41, percentualConcluido: 13, carteiraId: null, carteiraNome: null, criadaEm: '2026-01-18T00:00:00.000Z' },
+  { id: 'goal-mock-3', nome: 'Pós graduação', iconKey: 'graduation-cap', valorTotal: 13500, meses: 12, valorMensal: 1125, valorAportado: 13545.21, valorRestante: 0, percentualConcluido: 100, carteiraId: null, carteiraNome: null, criadaEm: '2025-07-18T00:00:00.000Z' },
+  { id: 'goal-mock-4', nome: 'Relógio', iconKey: 'target', valorTotal: 1700, meses: 4, valorMensal: 425, valorAportado: 1699.99, valorRestante: 0, percentualConcluido: 100, carteiraId: null, carteiraNome: null, criadaEm: '2025-11-18T00:00:00.000Z' },
 ];
 
+const recalcGoal = (goal: Goal): Goal => {
+  const valorAportado = (goalAporteDb[goal.id] ?? []).reduce((sum, aporte) => sum + aporte.valor, 0);
+  return {
+    ...goal,
+    valorAportado,
+    valorRestante: Math.max(goal.valorTotal - valorAportado, 0),
+    percentualConcluido: goal.valorTotal > 0 ? Math.min(Math.round((valorAportado / goal.valorTotal) * 100), 100) : 0,
+  };
+};
+
 const goalAporteDb: Record<string, GoalAporte[]> = {};
+
+const addAporteFromTransacao = (objetivoId: string, transacao: TransferTransaction) => {
+  const aporte: GoalAporte = {
+    id: crypto.randomUUID(),
+    valor: transacao.valor,
+    data: transacao.dataLancamento,
+    observacao: transacao.observacoes,
+    recorrente: false,
+    criadoEm: new Date().toISOString(),
+    transacaoId: transacao.id,
+  };
+
+  goalAporteDb[objetivoId] = [aporte, ...(goalAporteDb[objetivoId] ?? [])];
+  const goal = goalDb.find((g) => g.id === objetivoId);
+  if (goal) {
+    goalDb = goalDb.map((g) => (g.id === objetivoId ? recalcGoal(g) : g));
+  }
+};
+
+const removeAporteByTransacaoId = (transacaoId: string) => {
+  for (const objetivoId of Object.keys(goalAporteDb)) {
+    const before = goalAporteDb[objetivoId] ?? [];
+    const after = before.filter((a) => a.transacaoId !== transacaoId);
+
+    if (after.length !== before.length) {
+      goalAporteDb[objetivoId] = after;
+      goalDb = goalDb.map((g) => (g.id === objetivoId ? recalcGoal(g) : g));
+    }
+  }
+};
 
 // "Banco" em memória de usuários válidos (mock simplificado pro fluxo de senha)
 const userDb: Record<string, { password: string }> = {
@@ -235,6 +275,7 @@ let transferTransactionDb: TransferTransaction[] = [
     observacoes: 'Receita recorrente',
     criadaEm: '2026-07-10T12:00:00.000Z',
     atualizadaEm: null,
+    objetivoId: null,
   },
   {
     id: 'tr-mock-2',
@@ -253,6 +294,7 @@ let transferTransactionDb: TransferTransaction[] = [
     observacoes: 'Combustivel',
     criadaEm: '2026-07-12T12:00:00.000Z',
     atualizadaEm: null,
+    objetivoId: null,
   },
   {
     id: 'tr-mock-3',
@@ -271,6 +313,7 @@ let transferTransactionDb: TransferTransaction[] = [
     observacoes: 'Aporte para investimentos',
     criadaEm: '2026-07-14T12:00:00.000Z',
     atualizadaEm: null,
+    objetivoId: null,
   },
 ];
 
@@ -822,6 +865,7 @@ export const handlers = [
 
     const body = (await request.json()) as TransferUpsertRequest;
     const categoria = categoriaDb.find((item) => item.id === body.categoriaId);
+    const objetivoId = body.tipo === 'Receita' ? body.objetivoId ?? null : null;
 
     const created: TransferTransaction = {
       id: crypto.randomUUID(),
@@ -840,9 +884,15 @@ export const handlers = [
       observacoes: body.observacoes ?? null,
       criadaEm: new Date().toISOString(),
       atualizadaEm: null,
+      objetivoId,
     };
 
     transferTransactionDb = [created, ...transferTransactionDb];
+
+    if (objetivoId && created.efetivada) {
+      addAporteFromTransacao(objetivoId, created);
+    }
+
     return HttpResponse.json(created, { status: 201 });
   }),
 
@@ -861,6 +911,7 @@ export const handlers = [
     }
 
     const categoria = categoriaDb.find((item) => item.id === body.categoriaId);
+    const objetivoId = body.tipo === 'Receita' ? body.objetivoId ?? null : null;
 
     const current = transferTransactionDb[index];
     const updated: TransferTransaction = {
@@ -878,9 +929,16 @@ export const handlers = [
       dataEfetivacao: body.dataEfetivacao ?? null,
       observacoes: body.observacoes ?? null,
       atualizadaEm: new Date().toISOString(),
+      objetivoId,
     };
 
     transferTransactionDb[index] = updated;
+
+    removeAporteByTransacaoId(updated.id);
+    if (objetivoId && updated.efetivada) {
+      addAporteFromTransacao(objetivoId, updated);
+    }
+
     return HttpResponse.json(updated);
   }),
 
@@ -897,6 +955,7 @@ export const handlers = [
     }
 
     transferTransactionDb.splice(index, 1);
+    removeAporteByTransacaoId(id!);
     return HttpResponse.json({ message: 'Transação removida com sucesso.' });
   }),
 
@@ -924,6 +983,7 @@ export const handlers = [
       observacoes: body.observacoes ?? null,
       criadaEm: new Date().toISOString(),
       atualizadaEm: null,
+      objetivoId: null,
     };
 
     transferTransactionDb = [created, ...transferTransactionDb];
@@ -962,6 +1022,22 @@ export const handlers = [
 
     transferTransactionDb[index] = updated;
     return HttpResponse.json(updated);
+  }),
+
+  http.delete('/transfer/v2/remove', ({ request }) => {
+    const token = getBearerToken(request);
+    if (!token) {
+      return HttpResponse.json({ message: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const id = new URL(request.url).searchParams.get('id');
+    const index = transferTransactionDb.findIndex((item) => item.id === id && item.tipo === 'Transferencia');
+    if (index === -1) {
+      return HttpResponse.json({ message: 'Transferência não encontrada.' }, { status: 404 });
+    }
+
+    transferTransactionDb.splice(index, 1);
+    return HttpResponse.json({ message: 'Transferência removida com sucesso.' });
   }),
 
   http.get('/exchange/v2/list', ({ request }) => {
@@ -1210,10 +1286,9 @@ export const handlers = [
       valorTotal: body.valorTotal,
       meses: body.meses,
       valorMensal: body.valorTotal / body.meses,
-      valorAportado: carteira?.saldo ?? 0,
-      valorRestante: Math.max(body.valorTotal - (carteira?.saldo ?? 0), 0),
-      percentualConcluido: Math.min(Math.round(((carteira?.saldo ?? 0) / body.valorTotal) * 100), 100),
-      usaAporteManual: !carteiraId,
+      valorAportado: 0,
+      valorRestante: body.valorTotal,
+      percentualConcluido: 0,
       carteiraId: carteiraId || null,
       carteiraNome: carteira?.nome ?? null,
       criadaEm: new Date().toISOString(),
@@ -1243,29 +1318,21 @@ export const handlers = [
       valorTotal: number;
       meses: number;
       carteiraId?: string | null;
-      aporteManual?: number;
       iconKey?: string;
     };
 
     const carteira = body.carteiraId ? findWalletById(body.carteiraId) : undefined;
-    const valorAportado = body.carteiraId
-      ? (carteira?.saldo ?? 0)
-      : existing.valorAportado + (body.aporteManual ?? 0);
 
-    const atualizado: Goal = {
+    const atualizado: Goal = recalcGoal({
       ...existing,
       nome: body.nome.trim(),
       iconKey: body.iconKey?.trim() || existing.iconKey,
       valorTotal: body.valorTotal,
       meses: body.meses,
       valorMensal: body.valorTotal / body.meses,
-      valorAportado,
-      valorRestante: Math.max(body.valorTotal - valorAportado, 0),
-      percentualConcluido: Math.min(Math.round((valorAportado / body.valorTotal) * 100), 100),
-      usaAporteManual: !body.carteiraId,
       carteiraId: body.carteiraId ?? null,
       carteiraNome: carteira?.nome ?? null,
-    };
+    });
 
     goalDb = goalDb.map((goal) => (goal.id === id ? atualizado : goal));
 
@@ -1304,13 +1371,6 @@ export const handlers = [
       return HttpResponse.json({ message: 'Objetivo não encontrado.' }, { status: 404 });
     }
 
-    if (goal.carteiraId) {
-      return HttpResponse.json(
-        { message: 'Objetivo atrelado a carteira usa o saldo da carteira automaticamente.' },
-        { status: 400 }
-      );
-    }
-
     const body = (await request.json()) as {
       valor: number;
       data: string;
@@ -1329,18 +1389,12 @@ export const handlers = [
       observacao: body.observacao?.trim() || null,
       recorrente: !!body.recorrente,
       criadoEm: new Date().toISOString(),
+      transacaoId: null,
     };
 
     goalAporteDb[goal.id] = [aporte, ...(goalAporteDb[goal.id] ?? [])];
 
-    const valorAportado = goal.valorAportado + body.valor;
-    const atualizado: Goal = {
-      ...goal,
-      valorAportado,
-      valorRestante: Math.max(goal.valorTotal - valorAportado, 0),
-      percentualConcluido: Math.min(Math.round((valorAportado / goal.valorTotal) * 100), 100),
-    };
-
+    const atualizado = recalcGoal(goal);
     goalDb = goalDb.map((g) => (g.id === goal.id ? atualizado : g));
 
     return HttpResponse.json(atualizado, { status: 201 });
@@ -1380,18 +1434,17 @@ export const handlers = [
     }
 
     const aporte = goalAporteDb[goal.id]!.find((a) => a.id === aporteId)!;
+
+    if (aporte.transacaoId) {
+      return HttpResponse.json(
+        { message: 'Este depósito veio de uma receita. Edite ou remova a transação de origem.' },
+        { status: 400 }
+      );
+    }
+
     goalAporteDb[goal.id] = goalAporteDb[goal.id]!.filter((a) => a.id !== aporteId);
 
-    const valorAportado = Math.max(goal.valorAportado - aporte.valor, 0);
-    const atualizado: Goal = {
-      ...goal,
-      valorAportado,
-      valorRestante: Math.max(goal.valorTotal - valorAportado, 0),
-      percentualConcluido: goal.valorTotal > 0
-        ? Math.min(Math.round((valorAportado / goal.valorTotal) * 100), 100)
-        : 0,
-    };
-
+    const atualizado = recalcGoal(goal);
     goalDb = goalDb.map((g) => (g.id === goal.id ? atualizado : g));
 
     return HttpResponse.json(atualizado);

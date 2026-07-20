@@ -195,6 +195,18 @@
         textarea {
             resize: vertical;
         }
+
+        label.app-header__checkbox {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+
+            input {
+                width: auto;
+            }
+        }
     }
 
     &__form-error {

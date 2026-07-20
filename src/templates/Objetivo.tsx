@@ -60,6 +60,17 @@ const Objetivo = () => {
     void fetchSummary();
   }, [periodQuery]);
 
+  useEffect(() => {
+    const onRefresh = () => {
+      void fetchGoals();
+    };
+
+    window.addEventListener('wallet:transactions-updated', onRefresh);
+    return () => {
+      window.removeEventListener('wallet:transactions-updated', onRefresh);
+    };
+  }, [fetchGoals]);
+
   const selectedIconKey = iconKeyInput;
   const SelectedIcon = getGoalIcon(selectedIconKey);
   const selectedIconOption = GOAL_ICON_OPTIONS.find((option) => option.value === selectedIconKey);
@@ -362,71 +373,69 @@ const Objetivo = () => {
       <Modal
         isOpen={!!depositGoal}
         onClose={handleCloseDeposit}
-        title={depositGoal?.carteiraId ? depositGoal.nome : `Depositar em ${depositGoal?.nome ?? ''}`}
+        title={`Depositar em ${depositGoal?.nome ?? ''}`}
       >
         <div className="goal-deposit">
-          {depositGoal?.carteiraId ? (
-            <div className="goal-form">
+          <div className="goal-form">
+            {depositGoal?.carteiraId && (
               <p className="goal-form__hint">
-                Atrelado a {depositGoal.carteiraNome ?? 'carteira'} · o progresso é atualizado automaticamente pelo saldo da carteira.
+                Atrelado a {depositGoal.carteiraNome ?? 'carteira'} · receitas dessa carteira vinculadas a este objetivo também entram aqui.
               </p>
+            )}
+
+            <div className="goal-form__field">
+              <label className="goal-form__label" htmlFor="depositValor">Valor</label>
+              <CurrencyInput
+                id="depositValor"
+                value={depositValor}
+                onChange={setDepositValor}
+                required
+              />
             </div>
-          ) : (
-            <div className="goal-form">
-              <div className="goal-form__field">
-                <label className="goal-form__label" htmlFor="depositValor">Valor</label>
-                <CurrencyInput
-                  id="depositValor"
-                  value={depositValor}
-                  onChange={setDepositValor}
-                  required
-                />
-              </div>
 
-              <div className="goal-form__field">
-                <label className="goal-form__label" htmlFor="depositData">Data</label>
-                <DatePicker
-                  id="depositData"
-                  selected={depositData}
-                  onChange={(date: Date | null) => date && setDepositData(date)}
-                  dateFormat="dd/MM/yyyy"
-                  className="goal-form__input"
-                />
-              </div>
-
-              <div className="goal-form__field">
-                <label className="goal-form__label" htmlFor="depositObservacao">Observações</label>
-                <input
-                  id="depositObservacao"
-                  className="goal-form__input"
-                  type="text"
-                  value={depositObservacao}
-                  onChange={(e) => setDepositObservacao(e.target.value)}
-                  placeholder="Opcional"
-                />
-              </div>
-
-              <label className="goal-form__checkbox">
-                <input
-                  type="checkbox"
-                  checked={depositRecorrente}
-                  onChange={(e) => setDepositRecorrente(e.target.checked)}
-                />
-                Mensal
-              </label>
-
-              {error && <p className="goal-form__error" role="alert">{error}</p>}
-
-              <button
-                type="button"
-                className="goal-form__submit"
-                onClick={handleSubmitDeposit}
-                disabled={isLoading || depositValor <= 0}
-              >
-                {isLoading ? 'Salvando...' : 'Depositar'}
-              </button>
+            <div className="goal-form__field">
+              <label className="goal-form__label" htmlFor="depositData">Data</label>
+              <DatePicker
+                id="depositData"
+                selected={depositData}
+                onChange={(date: Date | null) => date && setDepositData(date)}
+                dateFormat="dd/MM/yyyy"
+                className="goal-form__input"
+              />
             </div>
-          )}
+
+            <div className="goal-form__field">
+              <label className="goal-form__label" htmlFor="depositObservacao">Observações</label>
+              <input
+                id="depositObservacao"
+                className="goal-form__input"
+                type="text"
+                value={depositObservacao}
+                onChange={(e) => setDepositObservacao(e.target.value)}
+                placeholder="Opcional"
+              />
+            </div>
+
+            <label className="goal-form__checkbox">
+              <input
+                type="checkbox"
+                checked={depositRecorrente}
+                onChange={(e) => setDepositRecorrente(e.target.checked)}
+              />
+              Mensal
+            </label>
+
+            {error && <p className="goal-form__error" role="alert">{error}</p>}
+
+            <button
+              type="button"
+              className="goal-form__submit"
+              onClick={handleSubmitDeposit}
+              disabled={isLoading || depositValor <= 0}
+            >
+              {isLoading ? 'Salvando...' : 'Depositar'}
+            </button>
+          </div>
 
           <section className="goal-form__history" aria-labelledby="goal-history-heading">
             <h3 className="goal-form__label" id="goal-history-heading">Histórico</h3>
@@ -442,14 +451,18 @@ const Objetivo = () => {
                     <span>
                       {aporte.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
-                    {aporte.observacao && <span className="goal-form__history-note">{aporte.observacao}</span>}
+                    {aporte.transacaoId ? (
+                      <span className="goal-form__history-note">Receita vinculada</span>
+                    ) : (
+                      aporte.observacao && <span className="goal-form__history-note">{aporte.observacao}</span>
+                    )}
                     <button
                       type="button"
                       className="goal-form__history-remove"
                       onClick={() => handleRemoveAporte(aporte.id)}
-                      disabled={removingAporteId === aporte.id}
-                      aria-label="Remover depósito"
-                      title="Remover depósito"
+                      disabled={removingAporteId === aporte.id || !!aporte.transacaoId}
+                      aria-label={aporte.transacaoId ? 'Remova a transação de origem para excluir' : 'Remover depósito'}
+                      title={aporte.transacaoId ? 'Remova a transação de origem para excluir' : 'Remover depósito'}
                     >
                       <Trash2 size={14} />
                     </button>
