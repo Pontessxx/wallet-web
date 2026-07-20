@@ -720,6 +720,21 @@ const Header = () => {
                                 <CurrencyInput className="tx-form__inline-currency" value={encargos} onChange={setEncargos} />
                             </div>
 
+                            {activeAction === 'OperacaoBolsa' && (
+                                <div className="tx-form__row tx-form__row--between">
+                                    <span className="tx-form__row-label">
+                                        <CircleDollarSign size={18} className="tx-form__row-icon" />
+                                        Valor total
+                                    </span>
+                                    <span className="tx-form__total-value">
+                                        {(quantidade * precoUnitario + encargos).toLocaleString('pt-BR', {
+                                            style: 'currency',
+                                            currency: 'BRL',
+                                        })}
+                                    </span>
+                                </div>
+                            )}
+
                             {activeAction === 'Receita' && (
                                 <div className="tx-form__section">
                                     <span className="tx-form__section-label">Objetivo (opcional)</span>
