@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
+import { X } from 'lucide-react'
 import '@/styles/Modal.scss'
 
 interface ModalProps {
@@ -6,9 +7,11 @@ interface ModalProps {
   onClose: () => void
   title?: string
   children: ReactNode
+  headerActions?: ReactNode
+  size?: 'md' | 'lg'
 }
 
-const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
+const Modal = ({ isOpen, onClose, title, children, headerActions, size = 'md' }: ModalProps) => {
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -30,20 +33,43 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
   return (
     <div className="modal__overlay">
       <div
-        className="modal__content"
+        className={`modal__content${size === 'lg' ? ' modal__content--lg' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}
       >
         <header className="modal__header">
-          {title && (
-            <h2 className="modal__title" id="modal-title">
-              {title}
-            </h2>
+          {headerActions ? (
+            <>
+              <div className="modal__header-left">
+                <button
+                  type="button"
+                  className="modal__close modal__close--leading"
+                  onClick={onClose}
+                  aria-label="Fechar"
+                >
+                  <X size={20} />
+                </button>
+                {title && (
+                  <h2 className="modal__title" id="modal-title">
+                    {title}
+                  </h2>
+                )}
+              </div>
+              <div className="modal__header-actions">{headerActions}</div>
+            </>
+          ) : (
+            <>
+              {title && (
+                <h2 className="modal__title" id="modal-title">
+                  {title}
+                </h2>
+              )}
+              <button type="button" className="modal__close" onClick={onClose} aria-label="Fechar">
+                <X size={18} />
+              </button>
+            </>
           )}
-          <button type="button" className="modal__close" onClick={onClose} aria-label="Fechar">
-            ✕
-          </button>
         </header>
         <div className="modal__body">{children}</div>
       </div>

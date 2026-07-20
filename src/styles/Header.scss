@@ -436,3 +436,269 @@
         cursor: not-allowed !important;
     }
 }
+
+// ---------------------------------------------
+// Modal de nova transação (Receita / Despesa / Transferência / Bolsa)
+// ---------------------------------------------
+.tx-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+
+    &__error {
+        margin: 0 0 0.25rem;
+        color: $error;
+        font-size: 0.85rem;
+    }
+
+    &__columns {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0 3rem;
+
+        @media (min-width: 720px) {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    &__col {
+        display: flex;
+        flex-direction: column;
+    }
+
+    select option {
+        background-color: $surface;
+        color: $text;
+    }
+
+    &__row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid $border;
+
+        select,
+        input[type="text"],
+        input[type="number"],
+        input[type="date"] {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: $text;
+            font-size: 0.9rem;
+            padding: 0.2rem 0;
+            outline: none;
+            min-width: 0;
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        input::placeholder {
+            color: $text-disabled;
+        }
+    }
+
+    &__row--primary {
+        input[type="text"] {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .currency-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 0;
+
+            &__field {
+                text-align: left;
+                font-size: 1.25rem;
+                font-weight: 600;
+            }
+
+            &__prefix {
+                font-size: 1.05rem;
+            }
+        }
+    }
+
+    &__row--between {
+        justify-content: space-between;
+        gap: 1rem;
+
+        select,
+        input[type="date"] {
+            flex: none;
+            width: auto;
+            text-align: right;
+            cursor: pointer;
+        }
+    }
+
+    &__row-icon {
+        color: $text-secondary;
+        flex-shrink: 0;
+    }
+
+    &__row-label {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: $text-secondary;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+
+    &__date-group {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    &__time {
+        color: $text-secondary;
+        font-size: 0.85rem;
+    }
+
+    &__section {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid $border;
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+
+    &__section-label {
+        color: $text-secondary;
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+
+    &__pill {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+
+        select {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: $text;
+            font-size: 0.95rem;
+            font-weight: 500;
+            padding: 0.2rem 0;
+            outline: none;
+            cursor: pointer;
+            min-width: 0;
+        }
+    }
+
+    &__pill-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    &__inline-currency.currency-input {
+        background: transparent;
+        border: none;
+        padding: 0;
+        width: auto;
+        flex: none;
+    }
+
+    &__save {
+        border: 1px solid transparent;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 700;
+        padding: 0.5rem 1.4rem;
+        transition: opacity 0.15s ease;
+
+        &:hover {
+            opacity: 0.9;
+        }
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        &--success {
+            background-color: $success;
+            color: $text-inverse;
+        }
+
+        &--danger {
+            background-color: $error;
+            color: $text-inverse;
+        }
+
+        &--neutral {
+            background-color: $edit;
+            color: $text-inverse;
+        }
+    }
+}
+
+.tx-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    flex-shrink: 0;
+
+    input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    &__track {
+        display: block;
+        width: 2.5rem;
+        height: 1.4rem;
+        border-radius: 999px;
+        background-color: $disabled;
+        transition: background-color 0.15s ease;
+        position: relative;
+    }
+
+    &__thumb {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: calc(1.4rem - 4px);
+        height: calc(1.4rem - 4px);
+        border-radius: 50%;
+        background-color: $text-inverse;
+        transition: transform 0.15s ease;
+    }
+
+    input:checked + .tx-toggle__track .tx-toggle__thumb {
+        transform: translateX(1.1rem);
+    }
+
+    &--success input:checked + .tx-toggle__track {
+        background-color: $success;
+    }
+
+    &--danger input:checked + .tx-toggle__track {
+        background-color: $error;
+    }
+
+    &--neutral input:checked + .tx-toggle__track {
+        background-color: $edit;
+    }
+}

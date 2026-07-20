@@ -4,7 +4,24 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from "@/contexts/AuthContext";
 import { authService } from "@/services/authService";
 import '@/styles/Header.scss';
-import { ArrowRightLeft, ChevronLeft, ChevronRight, Eye, EyeOff, Minus, Plus, TrendingUp } from 'lucide-react';
+import {
+    AlignLeft,
+    ArrowRightLeft,
+    CalendarClock,
+    CheckCircle2,
+    ChevronLeft,
+    ChevronRight,
+    CircleDollarSign,
+    Eye,
+    EyeOff,
+    Hash,
+    Landmark,
+    Layers,
+    Minus,
+    Plus,
+    Target,
+    TrendingUp,
+} from 'lucide-react';
 import { useVisibility } from '@/contexts/VisibilityContext';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -12,6 +29,8 @@ import { useDateFilter } from '@/contexts/DateFilterContext';
 import { useDropdownMenu } from '@/hooks/useDropdownMenu';
 import Modal from '@/components/Modal';
 import CurrencyInput from '@/components/CurrencyInput';
+import BankLogo from '@/components/BankLogo';
+import { getCategoriaIcon } from '@/utils/categoriaVisuals';
 import { carteiraService } from '@/services/carteiraService';
 import { categoriaService } from '@/services/categoriaService';
 import { transferService } from '@/services/transferService';
@@ -44,6 +63,13 @@ const HEADER_ACTIONS: Array<{ key: HeaderAction; label: string; icon: typeof Plu
 
 const HEADER_ACTIONS_MENU_ID = 'header-actions';
 
+const ACTION_ACCENT: Record<HeaderAction, 'success' | 'danger' | 'neutral'> = {
+    Receita: 'success',
+    Despesa: 'danger',
+    Transferencia: 'neutral',
+    OperacaoBolsa: 'success',
+};
+
 const Header = () => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
@@ -61,7 +87,7 @@ const Header = () => {
     } = useDateFilter();
     const [activeAction, setActiveAction] = useState<HeaderAction | null>(null);
     const [walletOptions, setWalletOptions] = useState<Array<{ id: string; nome: string }>>([]);
-    const [categoryOptions, setCategoryOptions] = useState<Array<{ id: string; nome: string }>>([]);
+    const [categoryOptions, setCategoryOptions] = useState<Array<{ id: string; nome: string; iconKey: string; colorHex: string }>>([]);
     const [goalOptions, setGoalOptions] = useState<Array<{ id: string; nome: string }>>([]);
     const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
 
@@ -81,6 +107,8 @@ const Header = () => {
     const [valor, setValor] = useState(0);
     const [encargos, setEncargos] = useState(0);
     const [dataLancamento, setDataLancamento] = useState(toDateInputValue());
+    const [dataVencimento, setDataVencimento] = useState(toDateInputValue());
+    const [launchTimeLabel, setLaunchTimeLabel] = useState('');
     const [observacoes, setObservacoes] = useState('');
     const [efetivada, setEfetivada] = useState(true);
 
@@ -168,7 +196,12 @@ const Header = () => {
                 if (!isMounted) return;
                 const mapped = categories
                     .filter((categoria) => categoria.tipo === activeAction)
-                    .map((categoria) => ({ id: categoria.id, nome: categoria.nome }));
+                    .map((categoria) => ({
+                        id: categoria.id,
+                        nome: categoria.nome,
+                        iconKey: categoria.iconKey,
+                        colorHex: categoria.colorHex,
+                    }));
                 setCategoryOptions(mapped);
                 setCategoriaId(mapped[0]?.id || '');
             } catch {
@@ -213,6 +246,7 @@ const Header = () => {
         setValor(0);
         setEncargos(0);
         setDataLancamento(toDateInputValue());
+        setDataVencimento(toDateInputValue());
         setObservacoes('');
         setEfetivada(false);
         setLado('Compra');
@@ -225,6 +259,7 @@ const Header = () => {
     const handleOpenActionModal = (action: HeaderAction) => {
         setActiveAction(action);
         resetForm();
+        setLaunchTimeLabel(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
     };
 
     const handleCloseModal = () => {
@@ -293,6 +328,7 @@ const Header = () => {
                     encargos,
                     efetivada,
                     dataLancamento: toUtcDateTime(dataLancamento),
+                    dataVencimento: toUtcDateTime(dataVencimento),
                     observacoes: observacoes.trim() || null,
                 });
                 dispatchRefreshEvent('wallet:exchange-updated');
@@ -304,6 +340,7 @@ const Header = () => {
                     encargos,
                     efetivada,
                     dataLancamento: toUtcDateTime(dataLancamento),
+                    dataVencimento: toUtcDateTime(dataVencimento),
                     observacoes: observacoes.trim() || null,
                 });
                 dispatchRefreshEvent('wallet:transactions-updated');
@@ -316,6 +353,7 @@ const Header = () => {
                     encargos,
                     efetivada,
                     dataLancamento: toUtcDateTime(dataLancamento),
+                    dataVencimento: toUtcDateTime(dataVencimento),
                     observacoes: observacoes.trim() || null,
                     objetivoId: activeAction === 'Receita' && objetivoId ? objetivoId : null,
                 });
@@ -489,148 +527,217 @@ const Header = () => {
             <Modal
                 isOpen={!!activeAction}
                 onClose={handleCloseModal}
-                title={activeAction ? (activeAction === 'OperacaoBolsa' ? 'Nova Operacao de Bolsa' : `Nova ${activeAction}`) : ''}
-            >
-                <div className="app-header__form">
-                    <label>
-                        Carteira {activeAction === 'Transferencia' ? 'de origem' : ''}
-                        <select value={carteiraId} onChange={(event) => setCarteiraId(event.target.value)}>
-                            <option value="">Selecione</option>
-                            {walletOptions.map((wallet) => (
-                                <option key={wallet.id} value={wallet.id}>{wallet.nome}</option>
-                            ))}
-                        </select>
-                    </label>
-
-                    {activeAction === 'OperacaoBolsa' && walletOptions.length === 0 && (
-                        <p className="app-header__form-error">Nenhuma carteira de investimento disponível.</p>
-                    )}
-
-                    {activeAction === 'Transferencia' && (
-                        <label>
-                            Carteira de destino
-                            <select value={carteiraDestinoId} onChange={(event) => setCarteiraDestinoId(event.target.value)}>
-                                <option value="">Selecione</option>
-                                {walletOptions
-                                    .filter((wallet) => wallet.id !== carteiraId)
-                                    .map((wallet) => (
-                                        <option key={wallet.id} value={wallet.id}>{wallet.nome}</option>
-                                    ))}
-                            </select>
-                        </label>
-                    )}
-
-                    {(activeAction === 'Receita' || activeAction === 'Despesa') && (
-                        <label>
-                            Categoria
-                            <select value={categoriaId} onChange={(event) => setCategoriaId(event.target.value)}>
-                                <option value="">Selecione</option>
-                                {categoryOptions.map((category) => (
-                                    <option key={category.id} value={category.id}>{category.nome}</option>
-                                ))}
-                            </select>
-                        </label>
-                    )}
-
-                    {activeAction === 'Receita' && (
-                        <label>
-                            Objetivo (opcional)
-                            <select value={objetivoId} onChange={(event) => setObjetivoId(event.target.value)}>
-                                <option value="">Nenhum</option>
-                                {goalOptions.map((goal) => (
-                                    <option key={goal.id} value={goal.id}>{goal.nome}</option>
-                                ))}
-                            </select>
-                        </label>
-                    )}
-
-                    {activeAction === 'OperacaoBolsa' ? (
-                        <>
-                            <label>
-                                Lado
-                                <select value={lado} onChange={(event) => setLado(event.target.value as 'Compra' | 'Venda')}>
-                                    <option value="Compra">Compra</option>
-                                    <option value="Venda">Venda</option>
-                                </select>
-                            </label>
-
-                            <label>
-                                Codigo do ativo
-                                <input
-                                    type="text"
-                                    value={codigoAtivo}
-                                    onChange={(event) => setCodigoAtivo(event.target.value)}
-                                    placeholder="Ex.: PETR4"
-                                />
-                            </label>
-
-                            <label>
-                                Quantidade
-                                <input
-                                    type="number"
-                                    min={0}
-                                    step="0.01"
-                                    value={quantidade}
-                                    onChange={(event) => setQuantidade(Number(event.target.value))}
-                                />
-                            </label>
-
-                            <label>
-                                Preco unitario
-                                <CurrencyInput value={precoUnitario} onChange={setPrecoUnitario} />
-                            </label>
-                        </>
-                    ) : (
-                        <>
-                            <label>
-                                Valor
-                                <CurrencyInput value={valor} onChange={setValor} />
-                            </label>
-
-                            <label>
-                                Encargos
-                                <CurrencyInput value={encargos} onChange={setEncargos} />
-                            </label>
-                        </>
-                    )}
-
-                    <label>
-                        Data de lancamento
-                        <input
-                            type="date"
-                            value={dataLancamento}
-                            onChange={(event) => setDataLancamento(event.target.value)}
-                        />
-                    </label>
-
-                    <label>
-                        Observacoes
-                        <textarea
-                            value={observacoes}
-                            onChange={(event) => setObservacoes(event.target.value)}
-                            rows={3}
-                        />
-                    </label>
-
-                    <label className="app-header__checkbox">
-                        <input
-                            type="checkbox"
-                            checked={efetivada}
-                            onChange={(event) => setEfetivada(event.target.checked)}
-                        />
-                        {' '}Efetivada
-                    </label>
-
-                    {formError && <p className="app-header__form-error">{formError}</p>}
-
+                size="lg"
+                title={activeAction ? (activeAction === 'OperacaoBolsa' ? 'Nova Operação de Bolsa' : `Nova ${activeAction}`) : ''}
+                headerActions={
                     <button
                         type="button"
-                        className="app-header__submit"
+                        className={`tx-form__save tx-form__save--${activeAction ? ACTION_ACCENT[activeAction] : 'neutral'}`}
                         onClick={handleSubmit}
                         disabled={isSubmitting || (activeAction === 'OperacaoBolsa' && walletOptions.length === 0)}
                     >
                         {isSubmitting ? 'Salvando...' : 'Salvar'}
                     </button>
+                }
+            >
+                <div className="tx-form">
+                    {formError && <p className="tx-form__error">{formError}</p>}
+
+                    <div className="tx-form__columns">
+                        <div className="tx-form__col">
+                            <div className="tx-form__row tx-form__row--primary">
+                                <AlignLeft size={18} className="tx-form__row-icon" />
+                                <input
+                                    type="text"
+                                    placeholder="Descrição"
+                                    value={observacoes}
+                                    onChange={(event) => setObservacoes(event.target.value)}
+                                />
+                            </div>
+
+                            {activeAction === 'OperacaoBolsa' ? (
+                                <>
+                                    <div className="tx-form__row">
+                                        <TrendingUp size={18} className="tx-form__row-icon" />
+                                        <select value={lado} onChange={(event) => setLado(event.target.value as 'Compra' | 'Venda')}>
+                                            <option value="Compra">Compra</option>
+                                            <option value="Venda">Venda</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="tx-form__row">
+                                        <Hash size={18} className="tx-form__row-icon" />
+                                        <input
+                                            type="text"
+                                            placeholder="Código do ativo (ex.: PETR4)"
+                                            value={codigoAtivo}
+                                            onChange={(event) => setCodigoAtivo(event.target.value)}
+                                        />
+                                    </div>
+
+                                    <div className="tx-form__row">
+                                        <Layers size={18} className="tx-form__row-icon" />
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            step="0.01"
+                                            placeholder="Quantidade"
+                                            value={quantidade || ''}
+                                            onChange={(event) => setQuantidade(Number(event.target.value))}
+                                        />
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="tx-form__row tx-form__row--primary">
+                                    <CircleDollarSign size={18} className="tx-form__row-icon" />
+                                    <CurrencyInput value={valor} onChange={setValor} />
+                                </div>
+                            )}
+
+                            <div className="tx-form__row tx-form__row--between">
+                                <span className="tx-form__row-label">
+                                    <CalendarClock size={18} className="tx-form__row-icon" />
+                                    Data de Vencimento
+                                </span>
+                                <input
+                                    type="date"
+                                    value={dataVencimento}
+                                    onChange={(event) => setDataVencimento(event.target.value)}
+                                />
+                            </div>
+
+                            <div className="tx-form__row tx-form__row--between">
+                                <span className="tx-form__row-label">
+                                    <CheckCircle2 size={18} className="tx-form__row-icon" />
+                                    Efetivada
+                                </span>
+                                <label className={`tx-toggle tx-toggle--${activeAction ? ACTION_ACCENT[activeAction] : 'neutral'}`}>
+                                    <input
+                                        type="checkbox"
+                                        checked={efetivada}
+                                        onChange={(event) => setEfetivada(event.target.checked)}
+                                    />
+                                    <span className="tx-toggle__track">
+                                        <span className="tx-toggle__thumb" />
+                                    </span>
+                                </label>
+                            </div>
+
+                            {(activeAction === 'Receita' || activeAction === 'Despesa') && (
+                                <div className="tx-form__section">
+                                    <span className="tx-form__section-label">Categoria</span>
+                                    <div className="tx-form__pill">
+                                        {(() => {
+                                            const selected = categoryOptions.find((category) => category.id === categoriaId);
+                                            const CategoriaIcon = getCategoriaIcon(selected?.iconKey);
+                                            return (
+                                                <span
+                                                    className="tx-form__pill-icon"
+                                                    style={{ backgroundColor: selected?.colorHex ?? '#64748B' }}
+                                                >
+                                                    <CategoriaIcon size={16} color="#fff" />
+                                                </span>
+                                            );
+                                        })()}
+                                        <select value={categoriaId} onChange={(event) => setCategoriaId(event.target.value)}>
+                                            <option value="">Selecione</option>
+                                            {categoryOptions.map((category) => (
+                                                <option key={category.id} value={category.id}>{category.nome}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="tx-form__section">
+                                <span className="tx-form__section-label">
+                                    {activeAction === 'Transferencia' ? 'Conta de origem' : 'Conta'}
+                                </span>
+                                <div className="tx-form__pill">
+                                    <BankLogo nome={walletOptions.find((wallet) => wallet.id === carteiraId)?.nome ?? '?'} size={28} />
+                                    <select value={carteiraId} onChange={(event) => setCarteiraId(event.target.value)}>
+                                        <option value="">Selecione</option>
+                                        {walletOptions.map((wallet) => (
+                                            <option key={wallet.id} value={wallet.id}>{wallet.nome}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {activeAction === 'OperacaoBolsa' && walletOptions.length === 0 && (
+                                <p className="tx-form__error">Nenhuma carteira de investimento disponível.</p>
+                            )}
+
+                            {activeAction === 'Transferencia' && (
+                                <div className="tx-form__section">
+                                    <span className="tx-form__section-label">Conta de destino</span>
+                                    <div className="tx-form__pill">
+                                        <BankLogo nome={walletOptions.find((wallet) => wallet.id === carteiraDestinoId)?.nome ?? '?'} size={28} />
+                                        <select value={carteiraDestinoId} onChange={(event) => setCarteiraDestinoId(event.target.value)}>
+                                            <option value="">Selecione</option>
+                                            {walletOptions
+                                                .filter((wallet) => wallet.id !== carteiraId)
+                                                .map((wallet) => (
+                                                    <option key={wallet.id} value={wallet.id}>{wallet.nome}</option>
+                                                ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="tx-form__col">
+                            <div className="tx-form__row tx-form__row--between">
+                                <span className="tx-form__row-label">
+                                    <CalendarClock size={18} className="tx-form__row-icon" />
+                                    Data de Lançamento
+                                </span>
+                                <span className="tx-form__date-group">
+                                    <input
+                                        type="date"
+                                        value={dataLancamento}
+                                        onChange={(event) => setDataLancamento(event.target.value)}
+                                    />
+                                    {launchTimeLabel && <span className="tx-form__time">{launchTimeLabel}</span>}
+                                </span>
+                            </div>
+
+                            {activeAction === 'OperacaoBolsa' && (
+                                <div className="tx-form__row tx-form__row--between">
+                                    <span className="tx-form__row-label">
+                                        <CircleDollarSign size={18} className="tx-form__row-icon" />
+                                        Preço unitário
+                                    </span>
+                                    <CurrencyInput className="tx-form__inline-currency" value={precoUnitario} onChange={setPrecoUnitario} />
+                                </div>
+                            )}
+
+                            <div className="tx-form__row tx-form__row--between">
+                                <span className="tx-form__row-label">
+                                    <Landmark size={18} className="tx-form__row-icon" />
+                                    Encargos
+                                </span>
+                                <CurrencyInput className="tx-form__inline-currency" value={encargos} onChange={setEncargos} />
+                            </div>
+
+                            {activeAction === 'Receita' && (
+                                <div className="tx-form__section">
+                                    <span className="tx-form__section-label">Objetivo (opcional)</span>
+                                    <div className="tx-form__pill">
+                                        <span className="tx-form__pill-icon" style={{ backgroundColor: '#64748B' }}>
+                                            <Target size={16} color="#fff" />
+                                        </span>
+                                        <select value={objetivoId} onChange={(event) => setObjetivoId(event.target.value)}>
+                                            <option value="">Nenhum</option>
+                                            {goalOptions.map((goal) => (
+                                                <option key={goal.id} value={goal.id}>{goal.nome}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </Modal>
         </header>

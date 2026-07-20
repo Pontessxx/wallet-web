@@ -22,6 +22,12 @@
     max-height: 90vh;
     overflow-y: auto;
     padding: 1.5rem;
+
+    &--lg {
+      width: 960px;
+      max-width: 95vw;
+      padding: 0;
+    }
   }
 
   &__header {
@@ -29,6 +35,28 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1rem;
+
+    .modal__content--lg & {
+      margin-bottom: 0;
+      padding: 1.1rem 1.5rem;
+      border-bottom: 1px solid $border;
+      position: sticky;
+      top: 0;
+      background: $surface;
+      z-index: 1;
+    }
+  }
+
+  &__header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+
+  &__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   &__title {
@@ -38,19 +66,31 @@
   }
 
   &__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: transparent;
     border: none;
     color: $text-secondary;
     cursor: pointer;
-    font-size: 1.25rem;
     line-height: 1;
+    padding: 0;
 
     &:hover {
       color: $text;
+    }
+
+    &--leading {
+      width: 1.75rem;
+      height: 1.75rem;
     }
   }
 
   &__body {
     color: $text;
+
+    .modal__content--lg & {
+      padding: 1.25rem 1.5rem 1.5rem;
+    }
   }
 }
