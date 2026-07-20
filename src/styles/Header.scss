@@ -3,7 +3,8 @@
 .app-header {
     display: flex;
     align-items: center;
-    justify-content: flex-end; // só sobrou o bloco de user, então empurra pra direita
+    justify-content: space-between;
+    gap: 1rem;
     height: $header-height;
     padding: 0 1.5rem;
     background-color: $surface;
@@ -17,6 +18,107 @@
         display: flex;
         align-items: center;
         gap: 0.75rem;
+    }
+
+    &__filters {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        min-width: 0;
+    }
+
+    &__actions {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+    }
+
+    &__period-type,
+    &__datepicker,
+    &__period-value {
+        border: 1px solid $border;
+        background-color: $surface;
+        color: $text;
+        font-size: 0.85rem;
+        font-weight: 500;
+        padding: 0.4rem 0.65rem;
+        border-radius: 6px;
+        min-height: 2rem;
+    }
+
+    &__datepicker {
+        width: 9.25rem;
+    }
+
+    &__period-value {
+        min-width: 5.5rem;
+
+        &--year {
+            min-width: 5rem;
+        }
+    }
+
+    &__actions-trigger {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.15rem;
+        height: 2.15rem;
+        border: 1px solid rgba($info, 0.45);
+        border-radius: 50%;
+        background: transparent;
+        color: $info;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+
+        &:hover {
+            background-color: rgba($info, 0.12);
+        }
+    }
+
+    &__actions-menu {
+        position: fixed;
+        display: flex;
+        flex-direction: column;
+        min-width: 200px;
+        background-color: $surface;
+        border: 1px solid $border;
+        border-radius: 8px;
+        box-shadow: $box-shadow-active;
+        padding: 0.35rem;
+        z-index: 1000;
+    }
+
+    &__actions-item {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        border: none;
+        border-radius: 6px;
+        background: transparent;
+        color: $text;
+        cursor: pointer;
+        font-size: 0.86rem;
+        font-weight: 600;
+        padding: 0.5rem 0.6rem;
+        text-align: left;
+
+        &:hover {
+            background-color: $surface-hover;
+        }
+
+        &--success {
+            color: $success;
+        }
+
+        &--danger {
+            color: $error;
+        }
+
+        &--neutral {
+            color: $edit;
+        }
     }
 
     &__avatar {
@@ -65,5 +167,272 @@
     }
     &__visibility{
         color: $text-secondary;
+    }
+
+    &__form {
+        display: grid;
+        gap: 0.8rem;
+
+        label {
+            display: grid;
+            gap: 0.35rem;
+            color: $text-secondary;
+            font-size: 0.86rem;
+            font-weight: 500;
+        }
+
+        label > input,
+        label > select,
+        label > textarea {
+            border: 1px solid $border;
+            border-radius: 6px;
+            background-color: $surface;
+            color: $text;
+            padding: 0.5rem 0.6rem;
+            font-size: 0.9rem;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        label.app-header__checkbox {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+
+            input {
+                width: auto;
+            }
+        }
+    }
+
+    &__form-error {
+        margin: 0;
+        color: $error;
+        font-size: 0.9rem;
+    }
+
+    &__submit {
+        border: 1px solid rgba($success, 0.45);
+        border-radius: 6px;
+        background-color: rgba($success, 0.15);
+        color: $success;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 700;
+        padding: 0.55rem 0.8rem;
+
+        &:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+    }
+}
+
+// ---------------------------------------------
+// Pílula de navegação de mês ("< Julho >")
+// ---------------------------------------------
+.app-header__month-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background-color: $surface;
+    border: 1px solid $border;
+    border-radius: 999px;
+    padding: 4px 6px;
+    position: relative; // ancora o popup do datepicker
+}
+
+.app-header__month-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: $text-secondary;
+    cursor: pointer;
+
+    &:hover {
+        background-color: $surface-hover;
+        color: $text;
+    }
+}
+
+.app-header__month-label {
+    border: none;
+    background: transparent;
+    color: $text;
+    font-weight: 600;
+    padding: 0 10px;
+    cursor: pointer;
+    min-width: 90px;
+    text-align: center;
+
+    &:hover {
+        color: $text-secondary;
+    }
+}
+
+// ---------------------------------------------
+// Tema do react-datepicker (usado no filtro de período do Header
+// como popup de mês/ano, e no Objetivo como calendário de dia).
+// !important é necessário aqui: o CSS padrão da lib
+// (react-datepicker/dist/react-datepicker.css) é importado
+// depois do nosso SCSS no bundle, então sobrescreve regras
+// de mesma especificidade sem o !important.
+// ---------------------------------------------
+.react-datepicker-popper {
+    z-index: 1000 !important;
+}
+
+// O <input> real fica dois níveis abaixo do wrapper que vira o flex item
+// (react-datepicker-wrapper > react-datepicker__input-container > input).
+// Sem isso, o input não acompanha o `stretch` do flexbox como os outros
+// campos do formulário e fica mais estreito/desalinhado.
+.react-datepicker-wrapper,
+.react-datepicker__input-container {
+    display: block !important;
+    width: 100%;
+}
+
+.react-datepicker__input-container input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.react-datepicker {
+    background-color: $surface !important;
+    border: 1px solid $border !important;
+    border-radius: 10px !important;
+    box-shadow: 0 4px 16px $box-shadow !important;
+    font-family: inherit !important;
+    overflow: hidden;
+
+    &__triangle {
+        display: none !important;
+    }
+}
+
+.react-datepicker__header {
+    background-color: $surface !important;
+    border-bottom: 1px solid $border !important;
+    padding-top: 0.7rem !important;
+}
+
+.react-datepicker__current-month,
+.react-datepicker-year-header {
+    color: $text !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    margin-bottom: 0.3rem !important;
+}
+
+.react-datepicker__navigation-icon::before {
+    border-color: $text-secondary !important;
+}
+
+.react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
+    border-color: $text !important;
+}
+
+// grid de meses (showMonthYearPicker)
+.react-datepicker__month-wrapper {
+    display: flex !important;
+    gap: 0.25rem !important;
+}
+
+.react-datepicker__month-text {
+    color: $text !important;
+    background-color: transparent !important;
+    border-radius: 6px !important;
+    padding: 0.4rem 0.5rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+
+    &:hover {
+        background-color: $surface-hover !important;
+        color: $text !important;
+    }
+
+    &--keyboard-selected {
+        background-color: transparent !important;
+        color: $text !important;
+    }
+
+    &--selected {
+        background-color: $info !important;
+        color: $text-inverse !important;
+        font-weight: 700 !important;
+
+        &:hover {
+            background-color: $info !important;
+        }
+    }
+
+    &--disabled {
+        color: $text-disabled !important;
+        cursor: not-allowed !important;
+
+        &:hover {
+            background-color: transparent !important;
+        }
+    }
+}
+
+.react-datepicker__month {
+    margin: 0.5rem !important;
+}
+
+// grade de dias (calendário padrão, usado no Objetivo)
+.react-datepicker__day-name {
+    color: $text-secondary !important;
+    font-family: inherit !important;
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+}
+
+.react-datepicker__day {
+    color: $text !important;
+    font-family: inherit !important;
+    font-size: 0.85rem !important;
+    border-radius: 6px !important;
+
+    &:hover {
+        background-color: $surface-hover !important;
+        color: $text !important;
+    }
+
+    &--keyboard-selected {
+        background-color: transparent !important;
+        color: $text !important;
+    }
+
+    &--selected,
+    &--selected:hover {
+        background-color: $info !important;
+        color: $text-inverse !important;
+        font-weight: 700 !important;
+    }
+
+    &--today {
+        font-weight: 700 !important;
+        color: $info !important;
+    }
+
+    &--outside-month {
+        color: $text-disabled !important;
+    }
+
+    &--disabled,
+    &--disabled:hover {
+        color: $text-disabled !important;
+        background-color: transparent !important;
+        cursor: not-allowed !important;
     }
 }

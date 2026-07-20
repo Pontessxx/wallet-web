@@ -15,7 +15,7 @@ export const exchangeHandlers = {
     }
   },
 
-  history: async (params: ExchangeHistoryParams): Promise<ExchangeTransaction[]> => {
+  history: async (params?: ExchangeHistoryParams): Promise<ExchangeTransaction[]> => {
     try {
       return await exchangeService.getHistory(params);
     } catch (error) {

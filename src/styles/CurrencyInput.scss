@@ -1,0 +1,35 @@
+@use 'variables' as *;
+
+.currency-input {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 6px;
+  padding: 0 0.75rem;
+  transition: border-color 0.15s ease;
+
+  &:focus-within {
+    border-color: $info;
+  }
+
+  &__prefix {
+    color: $text-secondary;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    user-select: none;
+  }
+
+  &__field {
+    flex: 1;
+    width: 100%;
+    background: transparent;
+    color: $text;
+    border: none;
+    padding: 0.5rem 0;
+    font-size: 0.9375rem;
+    text-align: right;
+    outline: none;
+  }
+}

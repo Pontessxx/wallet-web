@@ -7,7 +7,8 @@ import type {
   EditCarteiraRequest,
   WalletType,
 } from '@/types/carteira';
-import { carteiraService } from '@/services/carteiraService';
+import { carteiraHandlers } from '@/handlers/carteiraHandlers';
+import { useDateFilter } from '@/contexts/DateFilterContext';
 
 const CarteiraContext = createContext<CarteiraContextType | undefined>(undefined);
 
@@ -20,22 +21,23 @@ const CarteiraProvider = ({ children }: CarteiraProviderProps) => {
   const [saldoTotal, setSaldoTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { periodQuery } = useDateFilter();
 
   const fetchSummary = async (tipo?: WalletType) => {
     setIsLoading(true);
     setError(null);
 
     try {
-        const data = await carteiraService.getSummary(tipo);
-        setCarteiras(data.carteiras ?? []);
-        setSaldoTotal(data.saldoTotal ?? 0);
+      const data = await carteiraHandlers.summary(tipo, periodQuery);
+      setCarteiras(data.carteiras ?? []);
+      setSaldoTotal(data.saldoTotal ?? 0);
     } catch (err) {
-        setError('Erro ao carregar carteiras.');
-        console.error('Erro ao carregar resumo:', err);
+      setError('Erro ao carregar carteiras.');
+      console.error('Erro ao carregar resumo:', err);
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
-    };
+  };
 
   const createCarteira = async (
     data: CreateCarteiraRequest,
@@ -45,7 +47,7 @@ const CarteiraProvider = ({ children }: CarteiraProviderProps) => {
     setError(null);
 
     try {
-      const novaCarteira = await carteiraService.createAccount(data, tipo);
+      const novaCarteira = await carteiraHandlers.create(data, tipo);
       setCarteiras((prev) => [...prev, novaCarteira]);
       return novaCarteira;
     } catch (err) {
@@ -65,7 +67,7 @@ const CarteiraProvider = ({ children }: CarteiraProviderProps) => {
     setError(null);
 
     try {
-      const carteiraEditada = await carteiraService.editAccount(data, tipo);
+      const carteiraEditada = await carteiraHandlers.edit(data, tipo);
       setCarteiras((prev) =>
         prev.map((c) => (c.id === carteiraEditada.id ? carteiraEditada : c))
       );
@@ -84,7 +86,7 @@ const CarteiraProvider = ({ children }: CarteiraProviderProps) => {
     setError(null);
 
     try {
-      await carteiraService.removeAccount(id);
+      await carteiraHandlers.remove(id);
       setCarteiras((prev) => prev.filter((c) => c.id !== id));
     } catch (err) {
       setError('Erro ao remover carteira. Tente novamente.');

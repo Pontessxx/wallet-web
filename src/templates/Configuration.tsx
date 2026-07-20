@@ -149,11 +149,11 @@ const Configuration = () => {
   }
 
   if (isLoading) {
-    return <div className="configuration-page">Carregando...</div>
+    return <p className="configuration-page" role="status">Carregando...</p>
   }
 
   if (error) {
-    return <div className="configuration-page">{error}</div>
+    return <p className="configuration-page" role="alert">{error}</p>
   }
 
   return (
@@ -163,32 +163,37 @@ const Configuration = () => {
       </header>
 
       {user && (
-        <div className="configuration-card">
+        <dl className="configuration-card">
           <div className="configuration-card__field">
-            <span className="configuration-card__label">Usuário</span>
-            <div className="configuration-card__row">
+            <dt className="configuration-card__label">Usuário</dt>
+            <dd className="configuration-card__row">
               <span className="configuration-card__value">{user.username}</span>
               <button
+                type="button"
                 className="configuration-card__edit-btn"
                 onClick={handleOpenUsernameModal}
               >
                 Editar
               </button>
-            </div>
+            </dd>
           </div>
           <div className="configuration-card__field">
-            <span className="configuration-card__label">ID</span>
-            <span className="configuration-card__value">{user.id}</span>
+            <dt className="configuration-card__label">ID</dt>
+            <dd className="configuration-card__value">{user.id}</dd>
           </div>
           <div className="configuration-card__field">
-            <button
-              className="configuration-card__edit-btn"
-              onClick={handleOpenPasswordModal}
-            >
-              Alterar senha
-            </button>
+            <dt className="configuration-card__label">Senha</dt>
+            <dd>
+              <button
+                type="button"
+                className="configuration-card__edit-btn"
+                onClick={handleOpenPasswordModal}
+              >
+                Alterar senha
+              </button>
+            </dd>
           </div>
-        </div>
+        </dl>
       )}
 
       <div className="configuration-danger">
@@ -198,6 +203,7 @@ const Configuration = () => {
         </p>
 
         <button
+          type="button"
           className="configuration-danger__delete-btn"
           onClick={() => setIsDeleteModalOpen(true)}
         >
@@ -212,7 +218,11 @@ const Configuration = () => {
         title="Editar nome de usuário"
       >
         <div className="configuration-card__field">
+          <label className="configuration-card__label" htmlFor="username-input">
+            Novo nome de usuário
+          </label>
           <input
+            id="username-input"
             className="configuration-card__input"
             type="text"
             value={usernameInput}
@@ -221,9 +231,10 @@ const Configuration = () => {
             autoFocus
           />
         </div>
-        {usernameError && <p className="configuration-card__error">{usernameError}</p>}
+        {usernameError && <p className="configuration-card__error" role="alert">{usernameError}</p>}
         <div className="configuration-danger__confirm-actions">
           <button
+            type="button"
             className="configuration-danger__cancel-btn"
             onClick={handleCloseUsernameModal}
             disabled={isSavingUsername}
@@ -231,6 +242,7 @@ const Configuration = () => {
             Cancelar
           </button>
           <button
+            type="button"
             className="configuration-card__save-btn"
             onClick={handleSaveUsername}
             disabled={isSavingUsername}
@@ -286,9 +298,10 @@ const Configuration = () => {
             disabled={isSavingPassword}
           />
         </div>
-        {passwordError && <p className="configuration-password__error">{passwordError}</p>}
+        {passwordError && <p className="configuration-password__error" role="alert">{passwordError}</p>}
         <div className="configuration-danger__confirm-actions">
           <button
+            type="button"
             className="configuration-danger__cancel-btn"
             onClick={handleClosePasswordModal}
             disabled={isSavingPassword}
@@ -296,6 +309,7 @@ const Configuration = () => {
             Cancelar
           </button>
           <button
+            type="button"
             className="configuration-password__save-btn"
             onClick={handleSavePassword}
             disabled={isSavingPassword}
@@ -316,6 +330,7 @@ const Configuration = () => {
         </p>
         <div className="configuration-danger__confirm-actions">
           <button
+            type="button"
             className="configuration-danger__cancel-btn"
             onClick={handleCloseDeleteModal}
             disabled={isDeleting}
@@ -323,6 +338,7 @@ const Configuration = () => {
             Cancelar
           </button>
           <button
+            type="button"
             className="configuration-danger__delete-btn"
             onClick={handleRemove}
             disabled={isDeleting}
@@ -331,7 +347,7 @@ const Configuration = () => {
           </button>
         </div>
         {deleteError && (
-          <p className="configuration-danger__error">{deleteError}</p>
+          <p className="configuration-danger__error" role="alert">{deleteError}</p>
         )}
       </Modal>
     </section>

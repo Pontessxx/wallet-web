@@ -16,4 +16,12 @@ export const transactionService = {
 
     return response.data;
   },
+
+  removeTransfer: async (id: string) => {
+    await privateApi.delete('/transfer/v2/remove', {
+      params: {
+        id,
+      },
+    });
+  },
 };

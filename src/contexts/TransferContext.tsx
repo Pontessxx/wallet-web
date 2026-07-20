@@ -1,6 +1,7 @@
 import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 import { transferService } from '@/services/transferService';
+import { useDateFilter } from '@/contexts/DateFilterContext';
 import type {
   TransferContextType,
   TransferHistoryParams,
@@ -18,13 +19,17 @@ const TransferProvider = ({ children }: TransferProviderProps) => {
   const [entries, setEntries] = useState<TransferTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { periodQuery } = useDateFilter();
 
-  const fetchHistory = async (params: TransferHistoryParams) => {
+  const fetchHistory = async (params?: TransferHistoryParams) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const data = await transferService.getHistory(params);
+      const data = await transferService.getHistory({
+        ...periodQuery,
+        ...params,
+      });
       setEntries(data);
     } catch (err) {
       setError('Erro ao carregar histórico de lançamentos.');

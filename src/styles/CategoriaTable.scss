@@ -84,6 +84,27 @@
     background: $surface;
   }
 
+  &__tipo-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.25rem 0.65rem;
+    font-weight: 500;
+    font-size: 0.8125rem;
+
+    &--receita {
+      border: 1px solid rgba($success, 0.45);
+      background-color: rgba($success, 0.15);
+      color: $success;
+    }
+
+    &--despesa {
+      border: 1px solid rgba($error, 0.45);
+      background-color: rgba($error, 0.15);
+      color: $error;
+    }
+  }
+
   &__actions {
     position: relative;
     text-align: right;

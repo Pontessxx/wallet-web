@@ -50,11 +50,27 @@ const TransactionProvider = ({ children }: TransactionProviderProps) => {
     }
   };
 
+  const removeTransfer = async (id: string): Promise<void> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await transactionService.removeTransfer(id);
+    } catch (err) {
+      setError('Erro ao remover transferência. Tente novamente.');
+      console.error('Erro ao remover transferência:', err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const value: TransactionContextType = {
     isLoading,
     error,
     createTransfer,
     updateTransfer,
+    removeTransfer,
   };
 
   return <TransactionContext.Provider value={value}>{children}</TransactionContext.Provider>;

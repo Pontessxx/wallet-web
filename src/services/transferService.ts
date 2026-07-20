@@ -15,12 +15,12 @@ export const transferService = {
     return response.data;
   },
 
-  getHistory: async (params: TransferHistoryParams) => {
+  getHistory: async (params?: TransferHistoryParams) => {
     const response = await privateApi.get<TransferHistoryResponse>('/history/v2/transactions', {
       params,
     });
 
-    return (response.data.transacoes ?? []).filter((entry) => entry.tipo !== 'Transferencia');
+    return response.data.transacoes ?? [];
   },
 
   create: async (payload: TransferUpsertRequest) => {

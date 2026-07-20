@@ -1,9 +1,11 @@
 import { goalService } from '@/services/goalService';
 import { toApiErrorMessage } from '@/handlers/apiErrorHandler';
 import type {
+  CreateGoalAporteRequest,
   CreateGoalOptions,
   CreateGoalRequest,
   Goal,
+  GoalAporte,
   GoalListParams,
   UpdateGoalRequest,
 } from '@/types/goal';
@@ -38,6 +40,30 @@ export const goalHandlers = {
       await goalService.remove(id);
     } catch (error) {
       throw new Error(toApiErrorMessage(error, 'Erro ao remover objetivo.'));
+    }
+  },
+
+  createAporte: async (goalId: string, payload: CreateGoalAporteRequest): Promise<Goal> => {
+    try {
+      return await goalService.createAporte(goalId, payload);
+    } catch (error) {
+      throw new Error(toApiErrorMessage(error, 'Erro ao registrar deposito.'));
+    }
+  },
+
+  listAportes: async (goalId: string): Promise<GoalAporte[]> => {
+    try {
+      return await goalService.listAportes(goalId);
+    } catch (error) {
+      throw new Error(toApiErrorMessage(error, 'Erro ao listar depositos.'));
+    }
+  },
+
+  removeAporte: async (aporteId: string): Promise<Goal> => {
+    try {
+      return await goalService.removeAporte(aporteId);
+    } catch (error) {
+      throw new Error(toApiErrorMessage(error, 'Erro ao remover deposito.'));
     }
   },
 };

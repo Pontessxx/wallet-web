@@ -1,0 +1,316 @@
+@use 'variables' as *;
+
+.history-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  &__menu--portal {
+    position: fixed;
+    z-index: 1000;
+  }
+
+  &__menu {
+    background: $surface;
+    border: 1px solid $border;
+    border-radius: 6px;
+    box-shadow: $box-shadow-active;
+    min-width: 120px;
+
+    button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: none;
+      color: $error;
+      padding: 0.5rem 0.75rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+
+      &:hover {
+        background: $surface-hover;
+      }
+    }
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: $text;
+  }
+
+  &__error {
+    margin: 0;
+    color: $error;
+    font-size: 0.9rem;
+  }
+
+  &__tabs {
+    display: flex;
+    gap: 2rem;
+    border-bottom: 1px solid $border;
+
+    .history-page__tab:nth-child(1).history-page__tab--active {
+      color: $error;
+
+      &::after {
+        background: $error;
+      }
+    }
+
+    .history-page__tab:nth-child(2).history-page__tab--active {
+      color: $success;
+
+      &::after {
+        background: $success;
+      }
+    }
+
+    .history-page__tab:nth-child(3).history-page__tab--active {
+      color: $warning;
+
+      &::after {
+        background: $warning;
+      }
+    }
+
+    .history-page__tab:nth-child(4).history-page__tab--active {
+      color: $surface;
+
+      &::after {
+        background: $surface;
+      }
+    }
+  }
+
+  &__tab {
+    position: relative;
+    background: transparent;
+    border: none;
+    color: $text-secondary;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0.9rem 0.25rem;
+    cursor: pointer;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: $text;
+    }
+
+    &--active {
+      &::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -1px;
+        height: 2px;
+        border-radius: 2px;
+      }
+    }
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 760px;
+
+    th,
+    td {
+      padding: 0.7rem 0.8rem;
+      border-bottom: 1px solid $border;
+      font-size: 0.9rem;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      color: $text-secondary;
+      font-weight: 600;
+      background-color: $surface-hover;
+    }
+
+    td {
+      color: $text;
+    }
+  }
+
+  &__empty {
+    margin: 0;
+    padding: 1rem;
+    color: $text-secondary;
+    font-size: 0.9rem;
+  }
+
+  &__status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.6;
+    }
+
+    &--done {
+      color: $success;
+      background: rgba($success, 0.15);
+    }
+
+    &--pending {
+      color: $text-secondary;
+      background: $surface-hover;
+    }
+  }
+
+  &__description {
+    font-weight: 500;
+    color: $text;
+  }
+
+  &__category-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--badge-color);
+    background: color-mix(in srgb, var(--badge-color) 18%, transparent);
+    white-space: nowrap;
+
+    span[aria-hidden] {
+      opacity: 0.7;
+    }
+  }
+
+  &__wallet {
+    div {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      flex-direction: row;
+      gap: 0.7rem;
+    }
+  }
+
+  &__col-valor {
+    text-align: right;
+  }
+
+  &__col-acoes {
+    text-align: right;
+    width: 1%;
+    white-space: nowrap;
+
+    .history-page__action-btn + .history-page__action-btn {
+      margin-left: 0.4rem;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  &__action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    border: 1px solid $border;
+    border-radius: 6px;
+    background: transparent;
+    color: $text-secondary;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.4rem 0.55rem;
+    transition: color 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+      color: $text;
+      border-color: $text-secondary;
+    }
+
+    &--success {
+      border-color: rgba($success, 0.4);
+      color: $success;
+    }
+
+    &--danger {
+      border-color: rgba($error, 0.4);
+      color: $error;
+    }
+
+    &--neutral {
+      border-color: rgba($info, 0.45);
+      color: $info;
+    }
+  }
+
+  &__form {
+    display: grid;
+    gap: 0.8rem;
+
+    label {
+      display: grid;
+      gap: 0.35rem;
+      color: $text-secondary;
+      font-size: 0.86rem;
+      font-weight: 500;
+    }
+
+    input,
+    select,
+    textarea {
+      border: 1px solid $border;
+      border-radius: 6px;
+      background-color: $surface;
+      color: $text;
+      padding: 0.5rem 0.6rem;
+      font-size: 0.9rem;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+  }
+
+  &__submit {
+    border: 1px solid rgba($success, 0.45);
+    border-radius: 6px;
+    background-color: rgba($success, 0.15);
+    color: $success;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 0.55rem 0.8rem;
+
+    &:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+  }
+}

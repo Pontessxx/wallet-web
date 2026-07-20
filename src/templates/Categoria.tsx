@@ -5,7 +5,7 @@ import { useDropdownMenu } from '@/hooks/useDropdownMenu'
 import CategoriaTable from '@/components/CategoriaTable'
 import CategoriaActionsMenu from '@/components/CategoriaActionsMenu'
 import TableShell from '@/components/TableShell'
-import type { CategoriaIconKey } from '@/types/categoria'
+import type { CategoriaIconKey, CategoriaTipo } from '@/types/categoria'
 import {
   CATEGORIA_ICON_OPTIONS,
   DEFAULT_CATEGORIA_COLOR,
@@ -20,6 +20,7 @@ const isHexColor = (value: string) => /^#[0-9a-fA-F]{6}$/.test(value)
 const Categoria = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [nome, setNome] = useState('')
+  const [tipo, setTipo] = useState<CategoriaTipo>('Despesa')
   const [iconKeyInput, setIconKeyInput] = useState<CategoriaIconKey>(DEFAULT_CATEGORIA_ICON)
   const [isIconPickerOpen, setIsIconPickerOpen] = useState(false)
   const [iconFilter, setIconFilter] = useState('')
@@ -61,6 +62,7 @@ const Categoria = () => {
 
   const resetForm = () => {
     setNome('')
+    setTipo('Despesa')
     setIconKeyInput(DEFAULT_CATEGORIA_ICON)
     setIsIconPickerOpen(false)
     setIconFilter('')
@@ -81,7 +83,7 @@ const Categoria = () => {
     if (!nome.trim() || !isColorValid) return
 
     try {
-      await createCategoria({ nome, iconKey: selectedIconKey, colorHex })
+      await createCategoria({ nome, tipo, iconKey: selectedIconKey, colorHex })
       handleClose()
     } catch {
       // erro já tratado no context via `error`
@@ -101,7 +103,7 @@ const Categoria = () => {
     <section className="categoria-page">
       <header className="categoria-page__header">
         <h1 className="categoria-page__title">Categorias</h1>
-        <button className="categoria-page__add-btn" onClick={handleOpenCreate}>
+        <button type="button" className="categoria-page__add-btn" onClick={handleOpenCreate}>
           Adicionar Categoria
         </button>
       </header>
@@ -138,6 +140,21 @@ const Categoria = () => {
           </div>
 
           <div className="categoria-form__field">
+            <label className="categoria-form__label" htmlFor="tipo">
+              Tipo
+            </label>
+            <select
+              id="tipo"
+              className="categoria-form__input"
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value as CategoriaTipo)}
+            >
+              <option value="Despesa">Despesa</option>
+              <option value="Receita">Receita</option>
+            </select>
+          </div>
+
+          <div className="categoria-form__field">
             <label className="categoria-form__label" htmlFor="iconKey">
               Ícone
             </label>
@@ -166,28 +183,30 @@ const Categoria = () => {
                   aria-label="Buscar ícone"
                 />
 
-                <div className="categoria-form__icon-grid" role="listbox" aria-label="Selecionar ícone">
+                <ul className="categoria-form__icon-grid" role="listbox" aria-label="Selecionar ícone">
                   {filteredIconOptions.map((option) => {
                     const IconOption = getCategoriaIcon(option.value)
                     const isSelected = option.value === selectedIconKey
 
                     return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        className={`categoria-form__icon-option ${isSelected ? 'is-selected' : ''}`}
-                        onClick={() => {
-                          setIconKeyInput(option.value)
-                          setIsIconPickerOpen(false)
-                        }}
-                        title={`${option.label} (${option.value})`}
-                        aria-selected={isSelected}
-                      >
-                        <IconOption size={18} color={isSelected ? 'var(--color-info)' : colorHex} />
-                      </button>
+                      <li key={option.value} role="presentation">
+                        <button
+                          type="button"
+                          className={`categoria-form__icon-option ${isSelected ? 'is-selected' : ''}`}
+                          onClick={() => {
+                            setIconKeyInput(option.value)
+                            setIsIconPickerOpen(false)
+                          }}
+                          title={`${option.label} (${option.value})`}
+                          role="option"
+                          aria-selected={isSelected}
+                        >
+                          <IconOption size={18} color={isSelected ? 'var(--color-info)' : colorHex} />
+                        </button>
+                      </li>
                     )
                   })}
-                </div>
+                </ul>
               </div>
             )}
 
@@ -225,15 +244,16 @@ const Categoria = () => {
             </div>
 
             {!isColorValid && (
-              <p className="categoria-form__error">
+              <p className="categoria-form__error" role="alert">
                 Cor inválida. Use formato hexadecimal, por exemplo: #64748B.
               </p>
             )}
           </div>
 
-          {error && <p className="categoria-form__error">{error}</p>}
+          {error && <p className="categoria-form__error" role="alert">{error}</p>}
 
           <button
+            type="button"
             className="categoria-form__submit"
             onClick={handleSubmit}
             disabled={isLoading || !nome.trim() || !isColorValid}

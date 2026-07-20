@@ -4,6 +4,7 @@ import App from '@/App';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import '@/styles/global.scss';
 import { VisibilityProvider } from '@/contexts/VisibilityContext';
+import { DateFilterProvider } from '@/contexts/DateFilterContext';
 
 async function enableMocking() {
   if (import.meta.env.VITE_ENABLE_MSW !== 'true') {
@@ -22,7 +23,9 @@ enableMocking().then(() => {
   createRoot(document.getElementById('root')!).render(
     <ThemeProvider>
       <VisibilityProvider>
-        <App />
+        <DateFilterProvider>
+          <App />
+        </DateFilterProvider>
         <Toaster
           position="top-center"
           toastOptions={{

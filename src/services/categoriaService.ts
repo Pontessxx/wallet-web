@@ -19,6 +19,7 @@ export const categoriaService = {
       nome: categoria.nome ?? '',
       iconKey: categoria.iconKey ?? DEFAULT_CATEGORIA_ICON,
       colorHex: categoria.colorHex ?? DEFAULT_CATEGORIA_COLOR,
+      tipo: categoria.tipo ?? 'Despesa',
     });
 
     if (Array.isArray(data)) {
@@ -34,6 +35,7 @@ export const categoriaService = {
       ...response.data,
       iconKey: response.data.iconKey ?? DEFAULT_CATEGORIA_ICON,
       colorHex: response.data.colorHex ?? DEFAULT_CATEGORIA_COLOR,
+      tipo: response.data.tipo ?? 'Despesa',
     };
   },
 

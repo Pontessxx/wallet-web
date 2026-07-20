@@ -19,6 +19,7 @@ export interface TransferTransaction {
   observacoes: string | null;
   criadaEm: string;
   atualizadaEm: string | null;
+  objetivoId: string | null;
 }
 
 export interface TransferHistoryResponse {
@@ -41,13 +42,14 @@ export interface TransferUpsertRequest {
   dataVencimento?: string | null;
   dataEfetivacao?: string | null;
   observacoes?: string | null;
+  objetivoId?: string | null;
 }
 
 export interface TransferContextType {
   entries: TransferTransaction[];
   isLoading: boolean;
   error: string | null;
-  fetchHistory: (params: TransferHistoryParams) => Promise<void>;
+  fetchHistory: (params?: TransferHistoryParams) => Promise<void>;
   getById: (id: string) => Promise<TransferTransaction>;
   createEntry: (payload: TransferUpsertRequest) => Promise<TransferTransaction>;
   updateEntry: (id: string, payload: TransferUpsertRequest) => Promise<TransferTransaction>;
