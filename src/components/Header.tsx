@@ -20,6 +20,7 @@ import {
     Minus,
     Plus,
     Target,
+    TrendingDown,
     TrendingUp,
 } from 'lucide-react';
 import { useVisibility } from '@/contexts/VisibilityContext';
@@ -557,12 +558,23 @@ const Header = () => {
 
                             {activeAction === 'OperacaoBolsa' ? (
                                 <>
-                                    <div className="tx-form__row">
-                                        <TrendingUp size={18} className="tx-form__row-icon" />
-                                        <select value={lado} onChange={(event) => setLado(event.target.value as 'Compra' | 'Venda')}>
-                                            <option value="Compra">Compra</option>
-                                            <option value="Venda">Venda</option>
-                                        </select>
+                                    <div className="tx-form__section">
+                                        <span className="tx-form__section-label">Lado</span>
+                                        <div className="tx-form__pill">
+                                            <span
+                                                className={`tx-form__pill-icon tx-form__pill-icon--${lado === 'Compra' ? 'success' : 'danger'}`}
+                                            >
+                                                {lado === 'Compra' ? (
+                                                    <TrendingUp size={16} color="#fff" />
+                                                ) : (
+                                                    <TrendingDown size={16} color="#fff" />
+                                                )}
+                                            </span>
+                                            <select value={lado} onChange={(event) => setLado(event.target.value as 'Compra' | 'Venda')}>
+                                                <option value="Compra">Compra</option>
+                                                <option value="Venda">Venda</option>
+                                            </select>
+                                        </div>
                                     </div>
 
                                     <div className="tx-form__row">
@@ -712,22 +724,26 @@ const Header = () => {
                                 </div>
                             )}
 
-                            <div className="tx-form__row tx-form__row--between">
-                                <span className="tx-form__row-label">
-                                    <Landmark size={18} className="tx-form__row-icon" />
-                                    Encargos
-                                </span>
-                                <CurrencyInput className="tx-form__inline-currency" value={encargos} onChange={setEncargos} />
-                            </div>
+                            {(activeAction === 'Despesa' || activeAction === 'OperacaoBolsa') && (
+                                <div className="tx-form__row tx-form__row--between">
+                                    <span className="tx-form__row-label">
+                                        <Landmark size={18} className="tx-form__row-icon" />
+                                        Encargos
+                                    </span>
+                                    <CurrencyInput className="tx-form__inline-currency" value={encargos} onChange={setEncargos} />
+                                </div>
+                            )}
 
-                            {activeAction === 'OperacaoBolsa' && (
+                            {(activeAction === 'Despesa' || activeAction === 'OperacaoBolsa') && (
                                 <div className="tx-form__row tx-form__row--between">
                                     <span className="tx-form__row-label">
                                         <CircleDollarSign size={18} className="tx-form__row-icon" />
                                         Valor total
                                     </span>
                                     <span className="tx-form__total-value">
-                                        {(quantidade * precoUnitario + encargos).toLocaleString('pt-BR', {
+                                        {(
+                                            (activeAction === 'OperacaoBolsa' ? quantidade * precoUnitario : valor) + encargos
+                                        ).toLocaleString('pt-BR', {
                                             style: 'currency',
                                             currency: 'BRL',
                                         })}

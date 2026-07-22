@@ -146,6 +146,17 @@
     }
   }
 
+  &__table--clickable-rows {
+    tbody tr {
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+
+      &:hover {
+        background-color: $surface-hover;
+      }
+    }
+  }
+
   &__empty {
     margin: 0;
     padding: 1rem;

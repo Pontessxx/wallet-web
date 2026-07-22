@@ -1,5 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Check, Clock, Pencil, MoreVertical } from 'lucide-react';
+import {
+  AlignLeft,
+  CalendarClock,
+  Check,
+  CheckCircle2,
+  CircleDollarSign,
+  Clock,
+  Landmark,
+  Pencil,
+  MoreVertical,
+  Target,
+} from 'lucide-react';
 import { useTransfer } from '@/contexts/TransferContext';
 import { useTransaction } from '@/contexts/TransactionContext';
 import { useDateFilter } from '@/contexts/DateFilterContext';
@@ -14,8 +25,15 @@ import TransactionActionsMenu from '@/components/TransactionActionsMenu';
 import { carteiraService } from '@/services/carteiraService';
 import { goalService } from '@/services/goalService';
 import BankLogo from '@/components/BankLogo';
-import type { TransferTransaction } from '@/types/transfer';
+import { getCategoriaIcon } from '@/utils/categoriaVisuals';
+import type { TransferTransaction, TransferType } from '@/types/transfer';
 import '@/styles/HistoryPages.scss';
+
+const ACTION_ACCENT: Record<TransferType, 'success' | 'danger' | 'neutral'> = {
+  Receita: 'success',
+  Despesa: 'danger',
+  Transferencia: 'neutral',
+};
 
 type TabKey = 'Despesa' | 'Receita' | 'Transferencia' | 'Extrato';
 
@@ -52,7 +70,7 @@ const Transaction = () => {
   const { entries, isLoading, error, fetchHistory, updateEntry, removeEntry } = useTransfer();
   const { updateTransfer, removeTransfer } = useTransaction();
   const { periodQuery } = useDateFilter();
-  const { categorias } = useCategoria();
+  const { categorias, fetchCategorias } = useCategoria();
   const [walletOptions, setWalletOptions] = useState<Array<{ id: string; nome: string }>>([]);
   const [walletNameById, setWalletNameById] = useState<Record<string, string>>({});
   const [goalOptions, setGoalOptions] = useState<Array<{ id: string; nome: string }>>([]);
@@ -69,6 +87,7 @@ const Transaction = () => {
   const [editValor, setEditValor] = useState(0);
   const [editEncargos, setEditEncargos] = useState(0);
   const [editDataLancamento, setEditDataLancamento] = useState(toDateInputValue());
+  const [editDataVencimento, setEditDataVencimento] = useState(toDateInputValue());
   const [editObservacoes, setEditObservacoes] = useState('');
   const [editEfetivada, setEditEfetivada] = useState(true);
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
@@ -77,6 +96,10 @@ const Transaction = () => {
   useEffect(() => {
     void fetchHistory();
   }, [periodQuery]);
+
+  useEffect(() => {
+    void fetchCategorias();
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -227,6 +250,7 @@ const Transaction = () => {
     setEditValor(0);
     setEditEncargos(0);
     setEditDataLancamento(toDateInputValue());
+    setEditDataVencimento(toDateInputValue());
     setEditObservacoes('');
     setEditEfetivada(true);
     setEditFormError(null);
@@ -242,6 +266,9 @@ const Transaction = () => {
     setEditValor(entry.valor);
     setEditEncargos(entry.encargos);
     setEditDataLancamento(toDateInputValue(new Date(entry.dataLancamento)));
+    setEditDataVencimento(
+      entry.dataVencimento ? toDateInputValue(new Date(entry.dataVencimento)) : toDateInputValue()
+    );
     setEditObservacoes(entry.observacoes ?? '');
     setEditEfetivada(entry.efetivada);
     setEditFormError(null);
@@ -292,6 +319,7 @@ const Transaction = () => {
           encargos: editEncargos,
           efetivada: editEfetivada,
           dataLancamento: toUtcDateTime(editDataLancamento),
+          dataVencimento: toUtcDateTime(editDataVencimento),
           observacoes: editObservacoes.trim() || null,
         });
       } else {
@@ -303,6 +331,7 @@ const Transaction = () => {
           encargos: editEncargos,
           efetivada: editEfetivada,
           dataLancamento: toUtcDateTime(editDataLancamento),
+          dataVencimento: toUtcDateTime(editDataVencimento),
           observacoes: editObservacoes.trim() || null,
           objetivoId: editingEntry.tipo === 'Receita' && editObjetivoId ? editObjetivoId : null,
         });
@@ -472,104 +501,191 @@ const Transaction = () => {
       <Modal
         isOpen={!!editingEntry}
         onClose={handleCloseEdit}
+        size="lg"
         title={editingEntry ? `Editar ${editingEntry.tipo}` : ''}
-      >
-        <div className="app-header__form">
-          <label>
-            Carteira {editingEntry?.tipo === 'Transferencia' ? 'de origem' : ''}
-            <select value={editCarteiraId} onChange={(event) => setEditCarteiraId(event.target.value)}>
-              <option value="">Selecione</option>
-              {walletOptions.map((wallet) => (
-                <option key={wallet.id} value={wallet.id}>{wallet.nome}</option>
-              ))}
-            </select>
-          </label>
-
-          {editingEntry?.tipo === 'Transferencia' && (
-            <label>
-              Carteira de destino
-              <select value={editCarteiraDestinoId} onChange={(event) => setEditCarteiraDestinoId(event.target.value)}>
-                <option value="">Selecione</option>
-                {walletOptions
-                  .filter((wallet) => wallet.id !== editCarteiraId)
-                  .map((wallet) => (
-                    <option key={wallet.id} value={wallet.id}>{wallet.nome}</option>
-                  ))}
-              </select>
-            </label>
-          )}
-
-          {editingEntry && editingEntry.tipo !== 'Transferencia' && (
-            <label>
-              Categoria
-              <select value={editCategoriaId} onChange={(event) => setEditCategoriaId(event.target.value)}>
-                <option value="">Selecione</option>
-                {editCategoryOptions.map((category) => (
-                  <option key={category.id} value={category.id}>{category.nome}</option>
-                ))}
-              </select>
-            </label>
-          )}
-
-          {editingEntry?.tipo === 'Receita' && (
-            <label>
-              Objetivo (opcional)
-              <select value={editObjetivoId} onChange={(event) => setEditObjetivoId(event.target.value)}>
-                <option value="">Nenhum</option>
-                {goalOptions.map((goal) => (
-                  <option key={goal.id} value={goal.id}>{goal.nome}</option>
-                ))}
-              </select>
-            </label>
-          )}
-
-          <label>
-            Valor
-            <CurrencyInput value={editValor} onChange={setEditValor} />
-          </label>
-
-          <label>
-            Encargos
-            <CurrencyInput value={editEncargos} onChange={setEditEncargos} />
-          </label>
-
-          <label>
-            Data de lançamento
-            <input
-              type="date"
-              value={editDataLancamento}
-              onChange={(event) => setEditDataLancamento(event.target.value)}
-            />
-          </label>
-
-          <label>
-            Observações
-            <textarea
-              value={editObservacoes}
-              onChange={(event) => setEditObservacoes(event.target.value)}
-              rows={3}
-            />
-          </label>
-
-          <label className="app-header__checkbox">
-            <input
-              type="checkbox"
-              checked={editEfetivada}
-              onChange={(event) => setEditEfetivada(event.target.checked)}
-            />
-            {' '}Efetivada
-          </label>
-
-          {editFormError && <p className="app-header__form-error">{editFormError}</p>}
-
+        headerActions={
           <button
             type="button"
-            className="app-header__submit"
+            className={`tx-form__save tx-form__save--${editingEntry ? ACTION_ACCENT[editingEntry.tipo] : 'neutral'}`}
             onClick={handleSubmitEdit}
             disabled={isSubmittingEdit}
           >
             {isSubmittingEdit ? 'Salvando...' : 'Salvar'}
           </button>
+        }
+      >
+        <div className="tx-form">
+          {editFormError && <p className="tx-form__error">{editFormError}</p>}
+
+          <div className="tx-form__columns">
+            <div className="tx-form__col">
+              <div className="tx-form__row tx-form__row--primary">
+                <AlignLeft size={18} className="tx-form__row-icon" />
+                <input
+                  type="text"
+                  placeholder="Descrição"
+                  value={editObservacoes}
+                  onChange={(event) => setEditObservacoes(event.target.value)}
+                />
+              </div>
+
+              <div className="tx-form__row tx-form__row--primary">
+                <CircleDollarSign size={18} className="tx-form__row-icon" />
+                <CurrencyInput value={editValor} onChange={setEditValor} />
+              </div>
+
+              <div className="tx-form__row tx-form__row--between">
+                <span className="tx-form__row-label">
+                  <CalendarClock size={18} className="tx-form__row-icon" />
+                  Data de Vencimento
+                </span>
+                <input
+                  type="date"
+                  value={editDataVencimento}
+                  onChange={(event) => setEditDataVencimento(event.target.value)}
+                />
+              </div>
+
+              <div className="tx-form__row tx-form__row--between">
+                <span className="tx-form__row-label">
+                  <CheckCircle2 size={18} className="tx-form__row-icon" />
+                  Efetivada
+                </span>
+                <label
+                  className={`tx-toggle tx-toggle--${editingEntry ? ACTION_ACCENT[editingEntry.tipo] : 'neutral'}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={editEfetivada}
+                    onChange={(event) => setEditEfetivada(event.target.checked)}
+                  />
+                  <span className="tx-toggle__track">
+                    <span className="tx-toggle__thumb" />
+                  </span>
+                </label>
+              </div>
+
+              {editingEntry && editingEntry.tipo !== 'Transferencia' && (
+                <div className="tx-form__section">
+                  <span className="tx-form__section-label">Categoria</span>
+                  <div className="tx-form__pill">
+                    {(() => {
+                      const selected = editCategoryOptions.find((category) => category.id === editCategoriaId);
+                      const CategoriaIcon = getCategoriaIcon(selected?.iconKey);
+                      return (
+                        <span
+                          className="tx-form__pill-icon"
+                          style={{ backgroundColor: selected?.colorHex ?? '#64748B' }}
+                        >
+                          <CategoriaIcon size={16} color="#fff" />
+                        </span>
+                      );
+                    })()}
+                    <select value={editCategoriaId} onChange={(event) => setEditCategoriaId(event.target.value)}>
+                      <option value="">Selecione</option>
+                      {editCategoryOptions.map((category) => (
+                        <option key={category.id} value={category.id}>{category.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              <div className="tx-form__section">
+                <span className="tx-form__section-label">
+                  {editingEntry?.tipo === 'Transferencia' ? 'Conta de origem' : 'Conta'}
+                </span>
+                <div className="tx-form__pill">
+                  <BankLogo nome={walletOptions.find((wallet) => wallet.id === editCarteiraId)?.nome ?? '?'} size={28} />
+                  <select value={editCarteiraId} onChange={(event) => setEditCarteiraId(event.target.value)}>
+                    <option value="">Selecione</option>
+                    {walletOptions.map((wallet) => (
+                      <option key={wallet.id} value={wallet.id}>{wallet.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {editingEntry?.tipo === 'Transferencia' && (
+                <div className="tx-form__section">
+                  <span className="tx-form__section-label">Conta de destino</span>
+                  <div className="tx-form__pill">
+                    <BankLogo
+                      nome={walletOptions.find((wallet) => wallet.id === editCarteiraDestinoId)?.nome ?? '?'}
+                      size={28}
+                    />
+                    <select
+                      value={editCarteiraDestinoId}
+                      onChange={(event) => setEditCarteiraDestinoId(event.target.value)}
+                    >
+                      <option value="">Selecione</option>
+                      {walletOptions
+                        .filter((wallet) => wallet.id !== editCarteiraId)
+                        .map((wallet) => (
+                          <option key={wallet.id} value={wallet.id}>{wallet.nome}</option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="tx-form__col">
+              <div className="tx-form__row tx-form__row--between">
+                <span className="tx-form__row-label">
+                  <CalendarClock size={18} className="tx-form__row-icon" />
+                  Data de Lançamento
+                </span>
+                <input
+                  type="date"
+                  value={editDataLancamento}
+                  onChange={(event) => setEditDataLancamento(event.target.value)}
+                />
+              </div>
+
+              {editingEntry?.tipo === 'Despesa' && (
+                <div className="tx-form__row tx-form__row--between">
+                  <span className="tx-form__row-label">
+                    <Landmark size={18} className="tx-form__row-icon" />
+                    Encargos
+                  </span>
+                  <CurrencyInput className="tx-form__inline-currency" value={editEncargos} onChange={setEditEncargos} />
+                </div>
+              )}
+
+              {editingEntry?.tipo === 'Despesa' && (
+                <div className="tx-form__row tx-form__row--between">
+                  <span className="tx-form__row-label">
+                    <CircleDollarSign size={18} className="tx-form__row-icon" />
+                    Valor total
+                  </span>
+                  <span className="tx-form__total-value">
+                    {(editValor + editEncargos).toLocaleString('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    })}
+                  </span>
+                </div>
+              )}
+
+              {editingEntry?.tipo === 'Receita' && (
+                <div className="tx-form__section">
+                  <span className="tx-form__section-label">Objetivo (opcional)</span>
+                  <div className="tx-form__pill">
+                    <span className="tx-form__pill-icon" style={{ backgroundColor: '#64748B' }}>
+                      <Target size={16} color="#fff" />
+                    </span>
+                    <select value={editObjetivoId} onChange={(event) => setEditObjetivoId(event.target.value)}>
+                      <option value="">Nenhum</option>
+                      {goalOptions.map((goal) => (
+                        <option key={goal.id} value={goal.id}>{goal.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </Modal>
     </section>

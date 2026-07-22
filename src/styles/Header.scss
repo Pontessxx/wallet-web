@@ -606,6 +606,14 @@
         height: 1.75rem;
         border-radius: 50%;
         flex-shrink: 0;
+
+        &--success {
+            background-color: $success;
+        }
+
+        &--danger {
+            background-color: $error;
+        }
     }
 
     &__inline-currency.currency-input {
