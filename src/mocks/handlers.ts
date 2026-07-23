@@ -31,6 +31,27 @@ const getWalletType = (request: Request): WalletType | null => {
 const findWalletById = (walletId: string): Carteira | undefined =>
   [...carteiraDb.Corrente, ...carteiraDb.Investimento].find((wallet) => wallet.id === walletId);
 
+// Espelha a regra de câmbio manual do backend (Transfer.cs) pro mock
+const resolveTransferExchange = (
+  carteiraId: string,
+  carteiraDestinoId: string,
+  valorTotal: number,
+  taxaCambioInformada?: number | null
+): { taxaCambio: number | null; valorConvertido: number | null } => {
+  const origem = findWalletById(carteiraId)?.origem ?? 'Nacional';
+  const destino = findWalletById(carteiraDestinoId)?.origem ?? 'Nacional';
+
+  if (origem === destino || !taxaCambioInformada) {
+    return { taxaCambio: null, valorConvertido: null };
+  }
+
+  const valorConvertido = origem === 'Nacional'
+    ? Math.round((valorTotal / taxaCambioInformada) * 100) / 100
+    : Math.round(valorTotal * taxaCambioInformada * 100) / 100;
+
+  return { taxaCambio: taxaCambioInformada, valorConvertido };
+};
+
 // Guarda o usuário "logado" no mock, setado no login e limpo no logout/remove
 let loggedInUser: { id: string; username: string } | null = null;
 
@@ -45,6 +66,7 @@ const carteiraDb: Record<WalletType, Carteira[]> = {
       id: 'mock-1',
       nome: 'CarteiraTeste',
       categoria: 'Corrente',
+      origem: 'Nacional',
       saldoInicial: 0,
       receitas: 0,
       despesas: 0,
@@ -56,6 +78,7 @@ const carteiraDb: Record<WalletType, Carteira[]> = {
       id: 'mock-2',
       nome: 'Alelo',
       categoria: 'Corrente',
+      origem: 'Nacional',
       saldoInicial: 1500,
       receitas: 0,
       despesas: 0,
@@ -67,6 +90,7 @@ const carteiraDb: Record<WalletType, Carteira[]> = {
       id: 'mock-3',
       nome: 'XP Investimentos',
       categoria: 'Corrente',
+      origem: 'Nacional',
       saldoInicial: 12000,
       receitas: 0,
       despesas: 0,
@@ -78,6 +102,7 @@ const carteiraDb: Record<WalletType, Carteira[]> = {
       id: 'mock-4',
       nome: 'Bradesco S.A',
       categoria: 'Corrente',
+      origem: 'Nacional',
       saldoInicial: 3500,
       receitas: 0,
       despesas: 0,
@@ -92,11 +117,24 @@ const carteiraDb: Record<WalletType, Carteira[]> = {
       id: 'mock-5',
       nome: 'XP',
       categoria: 'Investimento',
+      origem: 'Nacional',
       saldoInicial: 0,
       receitas: 0,
       despesas: 0,
       transferencias: 0,
       saldo: 0,
+      saldoProjetado: 0,
+    },
+    {
+      id: 'mock-6',
+      nome: 'Nomad',
+      categoria: 'Investimento',
+      origem: 'Exterior',
+      saldoInicial: 1000,
+      receitas: 0,
+      despesas: 0,
+      transferencias: 0,
+      saldo: 1000,
       saldoProjetado: 0,
     },
   ],
@@ -156,6 +194,8 @@ let goalDb: Goal[] = [
   { id: 'goal-mock-2', nome: 'Viagem', iconKey: 'plane', valorTotal: 17000, meses: 18, valorMensal: 819.3, valorAportado: 2252.59, valorRestante: 14747.41, percentualConcluido: 13, carteiraId: null, carteiraNome: null, criadaEm: '2026-01-18T00:00:00.000Z' },
   { id: 'goal-mock-3', nome: 'Pós graduação', iconKey: 'graduation-cap', valorTotal: 13500, meses: 12, valorMensal: 1125, valorAportado: 13545.21, valorRestante: 0, percentualConcluido: 100, carteiraId: null, carteiraNome: null, criadaEm: '2025-07-18T00:00:00.000Z' },
   { id: 'goal-mock-4', nome: 'Relógio', iconKey: 'target', valorTotal: 1700, meses: 4, valorMensal: 425, valorAportado: 1699.99, valorRestante: 0, percentualConcluido: 100, carteiraId: null, carteiraNome: null, criadaEm: '2025-11-18T00:00:00.000Z' },
+  { id: 'goal-mock-5', nome: 'Reserva de emergência', iconKey: 'target', valorTotal: 8000, meses: 8, valorMensal: 1000, valorAportado: 3200, valorRestante: 4800, percentualConcluido: 40, carteiraId: 'mock-2', carteiraNome: 'XP', criadaEm: '2026-02-18T00:00:00.000Z' },
+  { id: 'goal-mock-6', nome: 'Viagem internacional', iconKey: 'plane', valorTotal: 3000, meses: 10, valorMensal: 300, valorAportado: 1000, valorRestante: 2000, percentualConcluido: 33, carteiraId: 'mock-6', carteiraNome: 'Nomad', criadaEm: '2026-03-18T00:00:00.000Z' },
 ];
 
 const recalcGoal = (goal: Goal): Goal => {
@@ -276,6 +316,8 @@ let transferTransactionDb: TransferTransaction[] = [
     criadaEm: '2026-07-10T12:00:00.000Z',
     atualizadaEm: null,
     objetivoId: null,
+    taxaCambio: null,
+    valorConvertido: null,
   },
   {
     id: 'tr-mock-2',
@@ -295,6 +337,8 @@ let transferTransactionDb: TransferTransaction[] = [
     criadaEm: '2026-07-12T12:00:00.000Z',
     atualizadaEm: null,
     objetivoId: null,
+    taxaCambio: null,
+    valorConvertido: null,
   },
   {
     id: 'tr-mock-3',
@@ -314,6 +358,8 @@ let transferTransactionDb: TransferTransaction[] = [
     criadaEm: '2026-07-14T12:00:00.000Z',
     atualizadaEm: null,
     objetivoId: null,
+    taxaCambio: null,
+    valorConvertido: null,
   },
 ];
 
@@ -352,6 +398,27 @@ let exchangeTransactionDb: ExchangeTransaction[] = [
     dataEfetivacao: '2026-07-15T00:00:00.000Z',
     observacoes: 'Realizacao parcial',
     criadaEm: '2026-07-15T12:00:00.000Z',
+    atualizadaEm: null,
+  },
+  {
+    // Operação fracionada em carteira do Exterior (mock-6 = Nomad): quantidade decimal,
+    // "precoUnitario" aqui é só o preço por ação armazenado — no front, o Preço total pago
+    // (valor) é o que o usuário digita, independente da quantidade fracionada.
+    id: 'ex-mock-3',
+    carteiraId: 'mock-6',
+    codigoAtivo: 'AAPL',
+    lado: 'Compra',
+    quantidade: 0.5412,
+    precoUnitario: 184.75,
+    valor: 99.99,
+    encargos: 0,
+    valorTotal: 99.99,
+    efetivada: true,
+    dataLancamento: '2026-07-18T00:00:00.000Z',
+    dataVencimento: null,
+    dataEfetivacao: '2026-07-18T00:00:00.000Z',
+    observacoes: 'Aporte fracionado',
+    criadaEm: '2026-07-18T12:00:00.000Z',
     atualizadaEm: null,
   },
 ];
@@ -648,12 +715,13 @@ export const handlers = [
       );
     }
 
-    const body = (await request.json()) as { nome: string; saldoInicial: number };
+    const body = (await request.json()) as { nome: string; saldoInicial: number; origem?: 'Nacional' | 'Exterior' };
 
     const novaCarteira: Carteira = {
       id: crypto.randomUUID(),
       nome: body.nome,
       categoria: tipo,
+      origem: body.origem ?? 'Nacional',
       saldoInicial: body.saldoInicial,
       receitas: 0,
       despesas: 0,
@@ -762,7 +830,7 @@ export const handlers = [
 
       const transferIn = walletTransactions
         .filter((entry) => entry.tipo === 'Transferencia' && entry.carteiraDestinoId === wallet.id)
-        .reduce((total, entry) => total + entry.valorTotal, 0);
+        .reduce((total, entry) => total + (entry.valorConvertido ?? entry.valorTotal), 0);
 
       const transferOut = walletTransactions
         .filter((entry) => entry.tipo === 'Transferencia' && entry.carteiraId === wallet.id)
@@ -885,6 +953,8 @@ export const handlers = [
       criadaEm: new Date().toISOString(),
       atualizadaEm: null,
       objetivoId,
+      taxaCambio: null,
+      valorConvertido: null,
     };
 
     transferTransactionDb = [created, ...transferTransactionDb];
@@ -966,6 +1036,12 @@ export const handlers = [
     }
 
     const body = (await request.json()) as WalletTransferUpsertRequest;
+    const { taxaCambio, valorConvertido } = resolveTransferExchange(
+      body.carteiraId,
+      body.carteiraDestinoId,
+      body.valor + body.encargos,
+      body.taxaCambio
+    );
     const created: TransferTransaction = {
       id: crypto.randomUUID(),
       carteiraId: body.carteiraId,
@@ -984,6 +1060,8 @@ export const handlers = [
       criadaEm: new Date().toISOString(),
       atualizadaEm: null,
       objetivoId: null,
+      taxaCambio,
+      valorConvertido,
     };
 
     transferTransactionDb = [created, ...transferTransactionDb];
@@ -1005,6 +1083,12 @@ export const handlers = [
     }
 
     const current = transferTransactionDb[index];
+    const { taxaCambio, valorConvertido } = resolveTransferExchange(
+      body.carteiraId,
+      body.carteiraDestinoId,
+      body.valor + body.encargos,
+      body.taxaCambio
+    );
     const updated: TransferTransaction = {
       ...current,
       carteiraId: body.carteiraId,
@@ -1018,6 +1102,8 @@ export const handlers = [
       dataEfetivacao: body.dataEfetivacao ?? null,
       observacoes: body.observacoes ?? null,
       atualizadaEm: new Date().toISOString(),
+      taxaCambio,
+      valorConvertido,
     };
 
     transferTransactionDb[index] = updated;

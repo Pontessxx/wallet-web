@@ -15,6 +15,8 @@ export interface WalletTransferTransaction {
   observacoes: string | null;
   criadaEm: string;
   atualizadaEm: string | null;
+  taxaCambio: number | null;
+  valorConvertido: number | null;
 }
 
 export interface WalletTransferUpsertRequest {
@@ -27,6 +29,7 @@ export interface WalletTransferUpsertRequest {
   dataVencimento?: string | null;
   dataEfetivacao?: string | null;
   observacoes?: string | null;
+  taxaCambio?: number | null;
 }
 
 export interface TransactionContextType {

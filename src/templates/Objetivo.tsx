@@ -13,6 +13,7 @@ import TableEmptyState from '@/components/TableEmptyState';
 import Modal from '@/components/Modal';
 import CurrencyInput from '@/components/CurrencyInput';
 import { DEFAULT_GOAL_ICON, GOAL_ICON_OPTIONS, getGoalIcon } from '@/utils/goalVisuals';
+import { currencyForOrigem, formatCurrency } from '@/utils/currency';
 import type { Goal, GoalAporte } from '@/types/goal';
 import '@/styles/HistoryPages.scss';
 import '@/styles/Objetivo.scss';
@@ -70,6 +71,12 @@ const Objetivo = () => {
       window.removeEventListener('wallet:transactions-updated', onRefresh);
     };
   }, [fetchGoals]);
+
+  const resolveGoalCurrency = (goalCarteiraId: string | null) =>
+    currencyForOrigem(carteiras.find((c) => c.id === goalCarteiraId)?.origem);
+
+  const formCurrency = resolveGoalCurrency(carteiraId || null);
+  const depositCurrency = resolveGoalCurrency(depositGoal?.carteiraId ?? null);
 
   const selectedIconKey = iconKeyInput;
   const SelectedIcon = getGoalIcon(selectedIconKey);
@@ -230,6 +237,7 @@ const Objetivo = () => {
               registerMenuBtnRef={registerTriggerRef}
               onToggleMenu={toggle}
               onDeposit={handleOpenDeposit}
+              currency={resolveGoalCurrency(goal.carteiraId)}
             />
           </li>
         ))}
@@ -319,28 +327,6 @@ const Objetivo = () => {
           </div>
 
           <div className="goal-form__field">
-            <label className="goal-form__label" htmlFor="valorTotal">Valor da meta</label>
-            <CurrencyInput
-              id="valorTotal"
-              value={valorTotal}
-              onChange={setValorTotal}
-              required
-            />
-          </div>
-
-          <div className="goal-form__field">
-            <label className="goal-form__label" htmlFor="dataAlvo">Espero alcançar em</label>
-            <DatePicker
-              id="dataAlvo"
-              selected={dataAlvo}
-              onChange={(date: Date | null) => date && setDataAlvo(date)}
-              dateFormat="dd/MM/yyyy"
-              minDate={addMonths(new Date(), 1)}
-              className="goal-form__input"
-            />
-          </div>
-
-          <div className="goal-form__field">
             <label className="goal-form__label" htmlFor="carteiraId">Carteira vinculada</label>
             <select
               id="carteiraId"
@@ -355,6 +341,29 @@ const Objetivo = () => {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="goal-form__field">
+            <label className="goal-form__label" htmlFor="valorTotal">Valor da meta</label>
+            <CurrencyInput
+              id="valorTotal"
+              value={valorTotal}
+              onChange={setValorTotal}
+              currency={formCurrency}
+              required
+            />
+          </div>
+
+          <div className="goal-form__field">
+            <label className="goal-form__label" htmlFor="dataAlvo">Espero alcançar em</label>
+            <DatePicker
+              id="dataAlvo"
+              selected={dataAlvo}
+              onChange={(date: Date | null) => date && setDataAlvo(date)}
+              dateFormat="dd/MM/yyyy"
+              minDate={addMonths(new Date(), 1)}
+              className="goal-form__input"
+            />
           </div>
 
           {error && <p className="goal-form__error" role="alert">{error}</p>}
@@ -389,6 +398,7 @@ const Objetivo = () => {
                 id="depositValor"
                 value={depositValor}
                 onChange={setDepositValor}
+                currency={depositCurrency}
                 required
               />
             </div>
@@ -449,7 +459,7 @@ const Objetivo = () => {
                   <li key={aporte.id}>
                     <time dateTime={aporte.data}>{new Date(aporte.data).toLocaleDateString('pt-BR')}</time>
                     <span>
-                      {aporte.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      {formatCurrency(aporte.valor, depositCurrency)}
                     </span>
                     {aporte.transacaoId ? (
                       <span className="goal-form__history-note">Receita vinculada</span>

@@ -27,6 +27,8 @@ import { goalService } from '@/services/goalService';
 import BankLogo from '@/components/BankLogo';
 import { getCategoriaIcon } from '@/utils/categoriaVisuals';
 import type { TransferTransaction, TransferType } from '@/types/transfer';
+import type { WalletOrigin } from '@/types/carteira';
+import { currencyForOrigem, formatCurrency } from '@/utils/currency';
 import '@/styles/HistoryPages.scss';
 
 const ACTION_ACCENT: Record<TransferType, 'success' | 'danger' | 'neutral'> = {
@@ -71,8 +73,9 @@ const Transaction = () => {
   const { updateTransfer, removeTransfer } = useTransaction();
   const { periodQuery } = useDateFilter();
   const { categorias, fetchCategorias } = useCategoria();
-  const [walletOptions, setWalletOptions] = useState<Array<{ id: string; nome: string }>>([]);
+  const [walletOptions, setWalletOptions] = useState<Array<{ id: string; nome: string; origem: WalletOrigin }>>([]);
   const [walletNameById, setWalletNameById] = useState<Record<string, string>>({});
+  const [walletOrigemById, setWalletOrigemById] = useState<Record<string, WalletOrigin>>({});
   const [goalOptions, setGoalOptions] = useState<Array<{ id: string; nome: string }>>([]);
   const [activeTab, setActiveTab] = useState<TabKey>('Despesa');
   const [togglingId, setTogglingId] = useState<string | null>(null);
@@ -86,6 +89,7 @@ const Transaction = () => {
   const [editObjetivoId, setEditObjetivoId] = useState('');
   const [editValor, setEditValor] = useState(0);
   const [editEncargos, setEditEncargos] = useState(0);
+  const [editTaxaCambio, setEditTaxaCambio] = useState(0);
   const [editDataLancamento, setEditDataLancamento] = useState(toDateInputValue());
   const [editDataVencimento, setEditDataVencimento] = useState(toDateInputValue());
   const [editObservacoes, setEditObservacoes] = useState('');
@@ -114,11 +118,18 @@ const Transaction = () => {
           return acc;
         }, {});
 
+        const origemMap = summary.carteiras.reduce<Record<string, WalletOrigin>>((acc, wallet) => {
+          acc[wallet.id] = wallet.origem;
+          return acc;
+        }, {});
+
         setWalletNameById(walletMap);
-        setWalletOptions(summary.carteiras.map((wallet) => ({ id: wallet.id, nome: wallet.nome })));
+        setWalletOrigemById(origemMap);
+        setWalletOptions(summary.carteiras.map((wallet) => ({ id: wallet.id, nome: wallet.nome, origem: wallet.origem })));
       } catch {
         if (isMounted) {
           setWalletNameById({});
+          setWalletOrigemById({});
           setWalletOptions([]);
         }
       }
@@ -179,6 +190,7 @@ const Transaction = () => {
   );
 
   const resolveWalletName = (walletId: string) => walletNameById[walletId] ?? walletId;
+  const resolveWalletCurrency = (walletId: string) => currencyForOrigem(walletOrigemById[walletId]);
 
   const getWalletDisplay = (entry: (typeof entries)[number]) => {
     const origin = resolveWalletName(entry.carteiraId);
@@ -249,6 +261,7 @@ const Transaction = () => {
     setEditObjetivoId('');
     setEditValor(0);
     setEditEncargos(0);
+    setEditTaxaCambio(0);
     setEditDataLancamento(toDateInputValue());
     setEditDataVencimento(toDateInputValue());
     setEditObservacoes('');
@@ -265,6 +278,7 @@ const Transaction = () => {
     setEditObjetivoId(entry.objetivoId ?? '');
     setEditValor(entry.valor);
     setEditEncargos(entry.encargos);
+    setEditTaxaCambio(entry.taxaCambio ?? 0);
     setEditDataLancamento(toDateInputValue(new Date(entry.dataLancamento)));
     setEditDataVencimento(
       entry.dataVencimento ? toDateInputValue(new Date(entry.dataVencimento)) : toDateInputValue()
@@ -277,6 +291,11 @@ const Transaction = () => {
   const handleCloseEdit = () => {
     resetEditForm();
   };
+
+  const editIsCrossCurrency = editingEntry?.tipo === 'Transferencia'
+    && !!editCarteiraId
+    && !!editCarteiraDestinoId
+    && resolveWalletCurrency(editCarteiraId) !== resolveWalletCurrency(editCarteiraDestinoId);
 
   const handleSubmitEdit = async () => {
     if (!editingEntry) return;
@@ -303,6 +322,11 @@ const Transaction = () => {
         setEditFormError('A carteira de destino deve ser diferente da origem.');
         return;
       }
+
+      if (editIsCrossCurrency && editTaxaCambio <= 0) {
+        setEditFormError('Informe a cotação para transferência entre moedas diferentes.');
+        return;
+      }
     } else if (!editCategoriaId) {
       setEditFormError('Selecione a categoria.');
       return;
@@ -321,6 +345,7 @@ const Transaction = () => {
           dataLancamento: toUtcDateTime(editDataLancamento),
           dataVencimento: toUtcDateTime(editDataVencimento),
           observacoes: editObservacoes.trim() || null,
+          taxaCambio: editIsCrossCurrency ? editTaxaCambio : null,
         });
       } else {
         await updateEntry(editingEntry.id, {
@@ -455,7 +480,7 @@ const Transaction = () => {
                   </td>
                   <td>{formatDate(entry.dataEfetivacao ?? entry.dataLancamento)}</td>
                   <td className="history-page__col-valor">
-                    <Money value={entry.valorTotal} />
+                    <Money value={entry.valorTotal} currency={resolveWalletCurrency(entry.carteiraId)} />
                   </td>
                   <td className="history-page__col-acoes">
                     <button
@@ -531,7 +556,7 @@ const Transaction = () => {
 
               <div className="tx-form__row tx-form__row--primary">
                 <CircleDollarSign size={18} className="tx-form__row-icon" />
-                <CurrencyInput value={editValor} onChange={setEditValor} />
+                <CurrencyInput value={editValor} onChange={setEditValor} currency={editCarteiraId ? resolveWalletCurrency(editCarteiraId) : 'BRL'} />
               </div>
 
               <div className="tx-form__row tx-form__row--between">
@@ -628,6 +653,23 @@ const Transaction = () => {
                   </div>
                 </div>
               )}
+
+              {editIsCrossCurrency && (
+                <div className="tx-form__row tx-form__row--between">
+                  <span className="tx-form__row-label">
+                    <CircleDollarSign size={18} className="tx-form__row-icon" />
+                    Cotação (R$ por U$1)
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.0001"
+                    placeholder="Ex: 5.20"
+                    value={editTaxaCambio || ''}
+                    onChange={(event) => setEditTaxaCambio(Number(event.target.value))}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="tx-form__col">
@@ -649,7 +691,7 @@ const Transaction = () => {
                     <Landmark size={18} className="tx-form__row-icon" />
                     Encargos
                   </span>
-                  <CurrencyInput className="tx-form__inline-currency" value={editEncargos} onChange={setEditEncargos} />
+                  <CurrencyInput className="tx-form__inline-currency" value={editEncargos} onChange={setEditEncargos} currency={editCarteiraId ? resolveWalletCurrency(editCarteiraId) : 'BRL'} />
                 </div>
               )}
 
@@ -660,10 +702,7 @@ const Transaction = () => {
                     Valor total
                   </span>
                   <span className="tx-form__total-value">
-                    {(editValor + editEncargos).toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    })}
+                    {formatCurrency(editValor + editEncargos, editCarteiraId ? resolveWalletCurrency(editCarteiraId) : 'BRL')}
                   </span>
                 </div>
               )}

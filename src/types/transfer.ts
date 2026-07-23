@@ -20,6 +20,8 @@ export interface TransferTransaction {
   criadaEm: string;
   atualizadaEm: string | null;
   objetivoId: string | null;
+  taxaCambio: number | null;
+  valorConvertido: number | null;
 }
 
 export interface TransferHistoryResponse {

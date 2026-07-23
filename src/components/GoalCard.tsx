@@ -3,6 +3,7 @@ import 'react-circular-progressbar/dist/styles.css';
 import { addMonths, differenceInCalendarMonths } from 'date-fns';
 import Money from '@/components/Money';
 import { getGoalIcon } from '@/utils/goalVisuals';
+import type { CurrencyCode } from '@/utils/currency';
 import type { Goal } from '@/types/goal';
 
 interface GoalCardProps {
@@ -10,9 +11,10 @@ interface GoalCardProps {
   registerMenuBtnRef: (id: string) => (el: HTMLButtonElement | null) => void;
   onToggleMenu: (id: string) => void;
   onDeposit: (goal: Goal) => void;
+  currency?: CurrencyCode;
 }
 
-const GoalCard = ({ goal, registerMenuBtnRef, onToggleMenu, onDeposit }: GoalCardProps) => {
+const GoalCard = ({ goal, registerMenuBtnRef, onToggleMenu, onDeposit, currency = 'BRL' }: GoalCardProps) => {
   const isComplete = goal.percentualConcluido >= 100;
   const ringValue = Math.min(goal.percentualConcluido, 100);
   const Icon = getGoalIcon(goal.iconKey);
@@ -61,11 +63,11 @@ const GoalCard = ({ goal, registerMenuBtnRef, onToggleMenu, onDeposit }: GoalCar
         <dl className="goal-card__stats">
           <div>
             <dt>Objetivo</dt>
-            <dd><Money value={goal.valorTotal} /></dd>
+            <dd><Money value={goal.valorTotal} currency={currency} /></dd>
           </div>
           <div>
             <dt>Ideal por mês</dt>
-            <dd><Money value={goal.valorMensal} /></dd>
+            <dd><Money value={goal.valorMensal} currency={currency} /></dd>
           </div>
         </dl>
 
@@ -86,11 +88,11 @@ const GoalCard = ({ goal, registerMenuBtnRef, onToggleMenu, onDeposit }: GoalCar
             </CircularProgressbarWithChildren>
           </div>
           <span className="goal-card__aportado">
-            <Money value={goal.valorAportado} />
+            <Money value={goal.valorAportado} currency={currency} />
           </span>
           {!isComplete && (
             <span className="goal-card__restante">
-              faltam <Money value={goal.valorRestante} />
+              faltam <Money value={goal.valorRestante} currency={currency} />
             </span>
           )}
         </div>

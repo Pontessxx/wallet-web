@@ -7,6 +7,7 @@ import '@/styles/Header.scss';
 import {
     AlignLeft,
     ArrowRightLeft,
+    ArrowUpDown,
     CalendarClock,
     CheckCircle2,
     ChevronLeft,
@@ -38,6 +39,8 @@ import { transferService } from '@/services/transferService';
 import { transactionService } from '@/services/transactionService';
 import { exchangeService } from '@/services/exchangeService';
 import { goalService } from '@/services/goalService';
+import { currencyForOrigem, formatCurrency } from '@/utils/currency';
+import type { WalletOrigin } from '@/types/carteira';
 
 const MONTH_FULL_NAMES = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -87,7 +90,7 @@ const Header = () => {
         setYearDate,
     } = useDateFilter();
     const [activeAction, setActiveAction] = useState<HeaderAction | null>(null);
-    const [walletOptions, setWalletOptions] = useState<Array<{ id: string; nome: string }>>([]);
+    const [walletOptions, setWalletOptions] = useState<Array<{ id: string; nome: string; origem: WalletOrigin }>>([]);
     const [categoryOptions, setCategoryOptions] = useState<Array<{ id: string; nome: string; iconKey: string; colorHex: string }>>([]);
     const [goalOptions, setGoalOptions] = useState<Array<{ id: string; nome: string }>>([]);
     const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
@@ -107,6 +110,7 @@ const Header = () => {
     const [objetivoId, setObjetivoId] = useState('');
     const [valor, setValor] = useState(0);
     const [encargos, setEncargos] = useState(0);
+    const [taxaCambio, setTaxaCambio] = useState(0);
     const [dataLancamento, setDataLancamento] = useState(toDateInputValue());
     const [dataVencimento, setDataVencimento] = useState(toDateInputValue());
     const [launchTimeLabel, setLaunchTimeLabel] = useState('');
@@ -117,6 +121,7 @@ const Header = () => {
     const [codigoAtivo, setCodigoAtivo] = useState('');
     const [quantidade, setQuantidade] = useState(0);
     const [precoUnitario, setPrecoUnitario] = useState(0);
+    const [iofPercent, setIofPercent] = useState(0);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
@@ -175,7 +180,7 @@ const Header = () => {
                     ? summary.carteiras.filter((wallet) => wallet.categoria === 'Investimento')
                     : summary.carteiras;
 
-                const wallets = sourceWallets.map((wallet) => ({ id: wallet.id, nome: wallet.nome }));
+                const wallets = sourceWallets.map((wallet) => ({ id: wallet.id, nome: wallet.nome, origem: wallet.origem }));
                 setWalletOptions(wallets);
                 setCarteiraId(wallets[0]?.id || '');
                 setCarteiraDestinoId(wallets[1]?.id || wallets[0]?.id || '');
@@ -246,21 +251,40 @@ const Header = () => {
         setObjetivoId('');
         setValor(0);
         setEncargos(0);
+        setTaxaCambio(0);
         setDataLancamento(toDateInputValue());
         setDataVencimento(toDateInputValue());
         setObservacoes('');
-        setEfetivada(false);
+        setEfetivada(true);
         setLado('Compra');
         setCodigoAtivo('');
         setQuantidade(0);
         setPrecoUnitario(0);
+        setIofPercent(0);
         setFormError(null);
     };
+
+    const originWallet = walletOptions.find((wallet) => wallet.id === carteiraId);
+    const destinoWallet = walletOptions.find((wallet) => wallet.id === carteiraDestinoId);
+    const formCurrency = currencyForOrigem(originWallet?.origem);
+    const isCrossCurrency = activeAction === 'Transferencia'
+        && !!originWallet
+        && !!destinoWallet
+        && originWallet.origem !== destinoWallet.origem;
+    const isExteriorBolsa = activeAction === 'OperacaoBolsa' && formCurrency === 'USD';
+    // No Exterior, "precoUnitario" representa o Preço total pago (independente da quantidade fracionada);
+    // no Nacional continua sendo o preço por ação, multiplicado pela quantidade inteira.
+    const valorBolsa = isExteriorBolsa ? precoUnitario : quantidade * precoUnitario + encargos;
 
     const handleOpenActionModal = (action: HeaderAction) => {
         setActiveAction(action);
         resetForm();
         setLaunchTimeLabel(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+    };
+
+    const handleSwapAccounts = () => {
+        setCarteiraId(carteiraDestinoId);
+        setCarteiraDestinoId(carteiraId);
     };
 
     const handleCloseModal = () => {
@@ -289,7 +313,11 @@ const Header = () => {
             }
 
             if (quantidade <= 0 || precoUnitario <= 0) {
-                setFormError('Quantidade e preco unitario devem ser maiores que zero.');
+                setFormError(
+                    isExteriorBolsa
+                        ? 'Quantidade e preço devem ser maiores que zero.'
+                        : 'Quantidade e preco unitario devem ser maiores que zero.'
+                );
                 return;
             }
         } else {
@@ -309,6 +337,11 @@ const Header = () => {
                 setFormError('A carteira de destino deve ser diferente da origem.');
                 return;
             }
+
+            if (isCrossCurrency && taxaCambio <= 0) {
+                setFormError('Informe a cotação para transferência entre moedas diferentes.');
+                return;
+            }
         }
 
         if ((activeAction === 'Receita' || activeAction === 'Despesa') && !categoriaId) {
@@ -325,8 +358,12 @@ const Header = () => {
                     lado,
                     codigoAtivo: codigoAtivo.trim().toUpperCase(),
                     quantidade,
-                    precoUnitario,
-                    encargos,
+                    // No Exterior "precoUnitario" no formulário é o Preço total pago; convertido aqui
+                    // para o preço por ação esperado pelo backend, que recalcula valor = quantidade * precoUnitario.
+                    precoUnitario: isExteriorBolsa
+                        ? (quantidade > 0 ? precoUnitario / quantidade : 0)
+                        : precoUnitario,
+                    encargos: isExteriorBolsa ? 0 : encargos,
                     efetivada,
                     dataLancamento: toUtcDateTime(dataLancamento),
                     dataVencimento: toUtcDateTime(dataVencimento),
@@ -343,6 +380,7 @@ const Header = () => {
                     dataLancamento: toUtcDateTime(dataLancamento),
                     dataVencimento: toUtcDateTime(dataVencimento),
                     observacoes: observacoes.trim() || null,
+                    taxaCambio: isCrossCurrency ? taxaCambio : null,
                 });
                 dispatchRefreshEvent('wallet:transactions-updated');
             } else {
@@ -559,7 +597,7 @@ const Header = () => {
                             {activeAction === 'OperacaoBolsa' ? (
                                 <>
                                     <div className="tx-form__section">
-                                        <span className="tx-form__section-label">Lado</span>
+                                        <span className="tx-form__section-label">Tipo</span>
                                         <div className="tx-form__pill">
                                             <span
                                                 className={`tx-form__pill-icon tx-form__pill-icon--${lado === 'Compra' ? 'success' : 'danger'}`}
@@ -591,18 +629,21 @@ const Header = () => {
                                         <Layers size={18} className="tx-form__row-icon" />
                                         <input
                                             type="number"
-                                            min={0}
-                                            step="0.01"
+                                            min={isExteriorBolsa ? 0 : 1}
+                                            step={isExteriorBolsa ? '0.000001' : '1'}
                                             placeholder="Quantidade"
                                             value={quantidade || ''}
-                                            onChange={(event) => setQuantidade(Number(event.target.value))}
+                                            onChange={(event) => {
+                                                const raw = Number(event.target.value);
+                                                setQuantidade(isExteriorBolsa ? raw : Math.round(raw));
+                                            }}
                                         />
                                     </div>
                                 </>
                             ) : (
                                 <div className="tx-form__row tx-form__row--primary">
                                     <CircleDollarSign size={18} className="tx-form__row-icon" />
-                                    <CurrencyInput value={valor} onChange={setValor} />
+                                    <CurrencyInput value={valor} onChange={setValor} currency={formCurrency} />
                                 </div>
                             )}
 
@@ -681,20 +722,61 @@ const Header = () => {
                             )}
 
                             {activeAction === 'Transferencia' && (
-                                <div className="tx-form__section">
-                                    <span className="tx-form__section-label">Conta de destino</span>
-                                    <div className="tx-form__pill">
-                                        <BankLogo nome={walletOptions.find((wallet) => wallet.id === carteiraDestinoId)?.nome ?? '?'} size={28} />
-                                        <select value={carteiraDestinoId} onChange={(event) => setCarteiraDestinoId(event.target.value)}>
-                                            <option value="">Selecione</option>
-                                            {walletOptions
-                                                .filter((wallet) => wallet.id !== carteiraId)
-                                                .map((wallet) => (
-                                                    <option key={wallet.id} value={wallet.id}>{wallet.nome}</option>
-                                                ))}
-                                        </select>
+                                <>
+                                    <button
+                                        type="button"
+                                        className="tx-form__swap-btn"
+                                        onClick={handleSwapAccounts}
+                                        disabled={!carteiraId || !carteiraDestinoId}
+                                        aria-label="Inverter carteira de origem e destino"
+                                        title="Inverter carteira de origem e destino"
+                                    >
+                                        <ArrowUpDown size={16} />
+                                    </button>
+
+                                    <div className="tx-form__section">
+                                        <span className="tx-form__section-label">Conta de destino</span>
+                                        <div className="tx-form__pill">
+                                            <BankLogo nome={walletOptions.find((wallet) => wallet.id === carteiraDestinoId)?.nome ?? '?'} size={28} />
+                                            <select value={carteiraDestinoId} onChange={(event) => setCarteiraDestinoId(event.target.value)}>
+                                                <option value="">Selecione</option>
+                                                {walletOptions
+                                                    .filter((wallet) => wallet.id !== carteiraId)
+                                                    .map((wallet) => (
+                                                        <option key={wallet.id} value={wallet.id}>{wallet.nome}</option>
+                                                    ))}
+                                            </select>
+                                        </div>
                                     </div>
+                                </>
+                            )}
+
+                            {isCrossCurrency && (
+                                <div className="tx-form__row tx-form__row--between">
+                                    <span className="tx-form__row-label">
+                                        <CircleDollarSign size={18} className="tx-form__row-icon" />
+                                        Cotação (R$ por U$1)
+                                    </span>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        step="0.0001"
+                                        placeholder="Ex: 5.20"
+                                        value={taxaCambio || ''}
+                                        onChange={(event) => setTaxaCambio(Number(event.target.value))}
+                                    />
                                 </div>
+                            )}
+
+                            {isCrossCurrency && taxaCambio > 0 && destinoWallet && (
+                                <p className="tx-form__hint">
+                                    Destino recebe {formatCurrency(
+                                        originWallet?.origem === 'Nacional'
+                                            ? (valor + encargos) / taxaCambio
+                                            : (valor + encargos) * taxaCambio,
+                                        currencyForOrigem(destinoWallet.origem)
+                                    )}
+                                </p>
                             )}
                         </div>
 
@@ -718,20 +800,53 @@ const Header = () => {
                                 <div className="tx-form__row tx-form__row--between">
                                     <span className="tx-form__row-label">
                                         <CircleDollarSign size={18} className="tx-form__row-icon" />
-                                        Preço unitário
+                                        {isExteriorBolsa ? 'Preço' : 'Preço unitário'}
                                     </span>
-                                    <CurrencyInput className="tx-form__inline-currency" value={precoUnitario} onChange={setPrecoUnitario} />
+                                    <CurrencyInput className="tx-form__inline-currency" value={precoUnitario} onChange={setPrecoUnitario} currency={formCurrency} />
                                 </div>
                             )}
 
-                            {(activeAction === 'Despesa' || activeAction === 'OperacaoBolsa') && (
+                            {activeAction === 'Despesa' && (
                                 <div className="tx-form__row tx-form__row--between">
                                     <span className="tx-form__row-label">
                                         <Landmark size={18} className="tx-form__row-icon" />
                                         Encargos
                                     </span>
-                                    <CurrencyInput className="tx-form__inline-currency" value={encargos} onChange={setEncargos} />
+                                    <CurrencyInput className="tx-form__inline-currency" value={encargos} onChange={setEncargos} currency={formCurrency} />
                                 </div>
+                            )}
+
+                            {activeAction === 'OperacaoBolsa' && !isExteriorBolsa && (
+                                <div className="tx-form__row tx-form__row--between">
+                                    <span className="tx-form__row-label">
+                                        <Landmark size={18} className="tx-form__row-icon" />
+                                        Encargos
+                                    </span>
+                                    <CurrencyInput className="tx-form__inline-currency" value={encargos} onChange={setEncargos} currency={formCurrency} />
+                                </div>
+                            )}
+
+                            {activeAction === 'OperacaoBolsa' && isExteriorBolsa && (
+                                <div className="tx-form__row tx-form__row--between">
+                                    <span className="tx-form__row-label">
+                                        <Landmark size={18} className="tx-form__row-icon" />
+                                        IOF (%)
+                                    </span>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        step="0.01"
+                                        placeholder="Ex: 1.10"
+                                        value={iofPercent || ''}
+                                        onChange={(event) => setIofPercent(Number(event.target.value))}
+                                    />
+                                </div>
+                            )}
+
+                            {isExteriorBolsa && (
+                                <p className="tx-form__hint">
+                                    IOF apenas informativo, não entra no cálculo do valor total.
+                                </p>
                             )}
 
                             {(activeAction === 'Despesa' || activeAction === 'OperacaoBolsa') && (
@@ -741,12 +856,10 @@ const Header = () => {
                                         Valor total
                                     </span>
                                     <span className="tx-form__total-value">
-                                        {(
-                                            (activeAction === 'OperacaoBolsa' ? quantidade * precoUnitario : valor) + encargos
-                                        ).toLocaleString('pt-BR', {
-                                            style: 'currency',
-                                            currency: 'BRL',
-                                        })}
+                                        {formatCurrency(
+                                            activeAction === 'OperacaoBolsa' ? valorBolsa : valor + encargos,
+                                            formCurrency
+                                        )}
                                     </span>
                                 </div>
                             )}

@@ -6,11 +6,12 @@ import { useDropdownMenu } from '@/hooks/useDropdownMenu'
 import CarteiraTable from '@/components/CarteiraTable'
 import CarteiraActionsMenu from '@/components/CarteiraActionsMenu'
 import TableShell from '@/components/TableShell'
-import type { WalletFilterType, WalletType } from '@/types/carteira'
+import type { WalletFilterType, WalletOrigin, WalletType } from '@/types/carteira'
 import '@/styles/CarteiraForm.scss'
 import '@/styles/CarteiraTable.scss'
 import Money from '@/components/Money'
 import { useDateFilter } from '@/contexts/DateFilterContext'
+import { currencyForOrigem } from '@/utils/currency'
 
 
 const Carteira = () => {
@@ -19,14 +20,15 @@ const Carteira = () => {
   const [nome, setNome] = useState('')
   const [saldoInicial, setSaldoInicial] = useState(0)
   const [tipo, setTipo] = useState<WalletType>('Corrente')
+  const [origem, setOrigem] = useState<WalletOrigin>('Nacional')
   const [filtroTipo, setFiltroTipo] = useState<WalletFilterType>('-')
+  const [filtroOrigem, setFiltroOrigem] = useState<'-' | WalletOrigin>('-')
   const { periodQuery } = useDateFilter()
 
   const { openId, position, menuRef, registerTriggerRef, toggle, close } = useDropdownMenu()
 
   const {
     carteiras,
-    saldoTotal,
     fetchSummary,
     createCarteira,
     editCarteira,
@@ -39,12 +41,15 @@ const Carteira = () => {
     fetchSummary(filtroTipo === '-' ? undefined : filtroTipo)
   }, [filtroTipo, periodQuery])
 
-  const listaCarteiras = carteiras ?? []
+  const listaCarteiras = (carteiras ?? []).filter(
+    (c) => filtroOrigem === '-' || c.origem === filtroOrigem
+  )
 
   const resetForm = () => {
     setNome('')
     setSaldoInicial(0)
     setTipo('Corrente')
+    setOrigem('Nacional')
     setEditingId(null)
   }
 
@@ -66,6 +71,7 @@ const Carteira = () => {
     setNome(carteira.nome)
     setSaldoInicial(carteira.saldoInicial)
     setTipo(carteira.categoria as WalletType)
+    setOrigem(carteira.origem)
     close()
     setIsModalOpen(true)
   }
@@ -75,9 +81,9 @@ const Carteira = () => {
 
     try {
       if (editingId) {
-        await editCarteira({ id: editingId, nome, categoria: tipo }, tipo)
+        await editCarteira({ id: editingId, nome, categoria: tipo, origem }, tipo)
       } else {
-        await createCarteira({ nome, saldoInicial }, tipo)
+        await createCarteira({ nome, saldoInicial, origem }, tipo)
       }
       handleClose()
     } catch {
@@ -94,9 +100,18 @@ const Carteira = () => {
     }
   }
 
-  const totalReceitas = listaCarteiras.reduce((acc, c) => acc + c.receitas, 0)
-  const totalDespesas = listaCarteiras.reduce((acc, c) => acc + c.despesas, 0)
-  const totalPrevisto = listaCarteiras.reduce((acc, c) => acc + c.saldoProjetado, 0)
+  const carteirasNacionais = listaCarteiras.filter((c) => c.origem !== 'Exterior')
+  const carteirasExterior = listaCarteiras.filter((c) => c.origem === 'Exterior')
+
+  const buildTotals = (lista: typeof listaCarteiras) => ({
+    receitas: lista.reduce((acc, c) => acc + c.receitas, 0),
+    despesas: lista.reduce((acc, c) => acc + c.despesas, 0),
+    saldo: lista.reduce((acc, c) => acc + c.saldo, 0),
+    previsto: lista.reduce((acc, c) => acc + c.saldoProjetado, 0),
+  })
+
+  const totaisNacionais = buildTotals(carteirasNacionais)
+  const totaisExterior = buildTotals(carteirasExterior)
 
   return (
     <section className="carteira-page">
@@ -109,9 +124,19 @@ const Carteira = () => {
             onChange={(e) => setFiltroTipo(e.target.value as WalletFilterType)}
             aria-label="Filtrar carteiras por tipo"
           >
-            <option value="-">-</option>
+            <option value="-">Tipo: Todos</option>
             <option value="Corrente">Corrente</option>
             <option value="Investimento">Investimento</option>
+          </select>
+          <select
+            className="carteira-page__filter"
+            value={filtroOrigem}
+            onChange={(e) => setFiltroOrigem(e.target.value as '-' | WalletOrigin)}
+            aria-label="Filtrar carteiras por origem"
+          >
+            <option value="-">Origem: Todas</option>
+            <option value="Nacional">Nacional</option>
+            <option value="Exterior">Exterior</option>
           </select>
           <button type="button" className="carteira-page__add-btn" onClick={handleOpenCreate}>
             Adicionar Carteira
@@ -129,24 +154,53 @@ const Carteira = () => {
       </TableShell>
 
       <footer className="carteira-page__footer">
-        <dl className="carteira-page__summary">
-          <div>
-            <dt>Receitas</dt>
-            <dd style={{ color: 'var(--color-success)' }}><Money value={totalReceitas} /></dd>
+        {carteirasNacionais.length > 0 && (
+          <div className="carteira-page__summary-group">
+            <span className="carteira-page__summary-label">Nacional</span>
+            <dl className="carteira-page__summary">
+              <div>
+                <dt>Receitas</dt>
+                <dd style={{ color: 'var(--color-success)' }}><Money value={totaisNacionais.receitas} /></dd>
+              </div>
+              <div>
+                <dt>Despesas</dt>
+                <dd style={{ color: 'var(--color-error)' }}><Money value={totaisNacionais.despesas} /></dd>
+              </div>
+              <div>
+                <dt>Saldo</dt>
+                <dd><Money value={totaisNacionais.saldo} /></dd>
+              </div>
+              <div>
+                <dt>Previsto</dt>
+                <dd style={{ color: 'var(--color-edit)' }}><Money value={totaisNacionais.previsto} /></dd>
+              </div>
+            </dl>
           </div>
-          <div>
-            <dt>Despesas</dt>
-            <dd style={{ color: 'var(--color-error)' }}><Money value={totalDespesas} /></dd>
+        )}
+
+        {carteirasExterior.length > 0 && (
+          <div className="carteira-page__summary-group carteira-page__summary-group--exterior">
+            <span className="carteira-page__summary-label">Exterior</span>
+            <dl className="carteira-page__summary">
+              <div>
+                <dt>Receitas</dt>
+                <dd style={{ color: 'var(--color-success)' }}><Money value={totaisExterior.receitas} currency="USD" /></dd>
+              </div>
+              <div>
+                <dt>Despesas</dt>
+                <dd style={{ color: 'var(--color-error)' }}><Money value={totaisExterior.despesas} currency="USD" /></dd>
+              </div>
+              <div>
+                <dt>Saldo</dt>
+                <dd><Money value={totaisExterior.saldo} currency="USD" /></dd>
+              </div>
+              <div>
+                <dt>Previsto</dt>
+                <dd style={{ color: 'var(--color-edit)' }}><Money value={totaisExterior.previsto} currency="USD" /></dd>
+              </div>
+            </dl>
           </div>
-          <div>
-            <dt>Saldo</dt>
-            <dd><Money value={saldoTotal ?? 0} /></dd>
-          </div>
-          <div>
-            <dt>Previsto</dt>
-            <dd style={{ color: 'var(--color-edit)' }}><Money value={totalPrevisto} /></dd>
-          </div>
-        </dl>
+        )}
       </footer>
 
       <CarteiraActionsMenu
@@ -193,6 +247,19 @@ const Carteira = () => {
           </div>
 
           <div className="carteira-form__field">
+            <label className="carteira-form__label" htmlFor="origem">Origem</label>
+            <select
+              id="origem"
+              className="carteira-form__select"
+              value={origem}
+              onChange={(e) => setOrigem(e.target.value as WalletOrigin)}
+            >
+              <option value="Nacional">Nacional</option>
+              <option value="Exterior">Exterior</option>
+            </select>
+          </div>
+
+          <div className="carteira-form__field">
             <label className="carteira-form__label" htmlFor="saldoInicial">
               Saldo inicial{editingId && ' (não editável)'}
             </label>
@@ -200,6 +267,7 @@ const Carteira = () => {
               id="saldoInicial"
               value={saldoInicial}
               onChange={setSaldoInicial}
+              currency={currencyForOrigem(origem)}
               disabled={!!editingId}
             />
           </div>

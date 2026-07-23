@@ -1,21 +1,18 @@
 import { useVisibility } from '@/contexts/VisibilityContext';
+import { formatCurrency, type CurrencyCode } from '@/utils/currency';
 
 interface MoneyProps {
   value: number;
   className?: string;
+  currency?: CurrencyCode;
 }
 
-const Money = ({ value, className }: MoneyProps) => {
+const Money = ({ value, className, currency = 'BRL' }: MoneyProps) => {
   const { showValues } = useVisibility();
 
   return (
     <span className={className}>
-      {showValues
-        ? value.toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL',
-          })
-        : '••••••'}
+      {showValues ? formatCurrency(value, currency) : '••••••'}
     </span>
   );
 };

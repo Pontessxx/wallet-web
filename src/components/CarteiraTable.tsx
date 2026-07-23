@@ -3,6 +3,7 @@ import BankLogo from '@/components/BankLogo'
 import Money from '@/components/Money';
 import TableEmptyState from '@/components/TableEmptyState'
 import TableActionsCell from '@/components/TableActionsCell'
+import { currencyForOrigem } from '@/utils/currency'
 
 interface CarteiraTableProps {
   carteiras: Carteira[]
@@ -41,18 +42,20 @@ const CarteiraTable = ({ carteiras, isLoading, registerMenuBtnRef, onToggleMenu 
         </tr>
       </thead>
       <tbody>
-        {carteiras.map((carteira) => (
+        {carteiras.map((carteira) => {
+          const currency = currencyForOrigem(carteira.origem)
+          return (
           <tr key={carteira.id}>
             <td className="carteira-table__desc">
               <BankLogo nome={carteira.nome} size={24} />
               <span>{carteira.nome}</span>
             </td>
-            <td><Money value={carteira.saldoInicial} /></td>
-            <td><Money value={carteira.receitas} /></td>
-            <td><Money value={carteira.despesas} /></td>
-            <td><Money value={carteira.transferencias} /></td>
-            <td className="carteira-table__saldo"><Money value={carteira.saldo} /></td>
-            <td className="carteira-table__previsto"><Money value={carteira.saldoProjetado} /></td>
+            <td><Money value={carteira.saldoInicial} currency={currency} /></td>
+            <td><Money value={carteira.receitas} currency={currency} /></td>
+            <td><Money value={carteira.despesas} currency={currency} /></td>
+            <td><Money value={carteira.transferencias} currency={currency} /></td>
+            <td className="carteira-table__saldo"><Money value={carteira.saldo} currency={currency} /></td>
+            <td className="carteira-table__previsto"><Money value={carteira.saldoProjetado} currency={currency} /></td>
             <TableActionsCell
               id={carteira.id}
               registerMenuBtnRef={registerMenuBtnRef}
@@ -61,7 +64,8 @@ const CarteiraTable = ({ carteiras, isLoading, registerMenuBtnRef, onToggleMenu 
               buttonClassName="carteira-table__menu-btn"
             />
           </tr>
-        ))}
+          )
+        })}
       </tbody>
     </table>
   )

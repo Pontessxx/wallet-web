@@ -20,6 +20,8 @@ import CurrencyInput from '@/components/CurrencyInput';
 import { carteiraService } from '@/services/carteiraService';
 import BankLogo from '@/components/BankLogo';
 import type { ExchangeSide, ExchangeTransaction } from '@/types/exchange';
+import type { WalletOrigin } from '@/types/carteira';
+import { currencyForOrigem, formatCurrency } from '@/utils/currency';
 import '@/styles/HistoryPages.scss';
 
 const formatDate = (value: string | null) => {
@@ -48,7 +50,8 @@ const OperacaoBolsa = () => {
   const { operations, isLoading, error, fetchHistory, updateOperation } = useExchange();
   const { periodQuery } = useDateFilter();
   const [walletNameById, setWalletNameById] = useState<Record<string, string>>({});
-  const [walletOptions, setWalletOptions] = useState<Array<{ id: string; nome: string }>>([]);
+  const [walletOrigemById, setWalletOrigemById] = useState<Record<string, WalletOrigin>>({});
+  const [walletOptions, setWalletOptions] = useState<Array<{ id: string; nome: string; origem: WalletOrigin }>>([]);
 
   const [editingOperation, setEditingOperation] = useState<ExchangeTransaction | null>(null);
   const [editCarteiraId, setEditCarteiraId] = useState('');
@@ -56,6 +59,7 @@ const OperacaoBolsa = () => {
   const [editCodigoAtivo, setEditCodigoAtivo] = useState('');
   const [editQuantidade, setEditQuantidade] = useState(0);
   const [editPrecoUnitario, setEditPrecoUnitario] = useState(0);
+  const [editIofPercent, setEditIofPercent] = useState(0);
   const [editEncargos, setEditEncargos] = useState(0);
   const [editDataLancamento, setEditDataLancamento] = useState(toDateInputValue());
   const [editDataVencimento, setEditDataVencimento] = useState(toDateInputValue());
@@ -81,15 +85,22 @@ const OperacaoBolsa = () => {
           return acc;
         }, {});
 
+        const origemMap = summary.carteiras.reduce<Record<string, WalletOrigin>>((acc, wallet) => {
+          acc[wallet.id] = wallet.origem;
+          return acc;
+        }, {});
+
         setWalletNameById(walletMap);
+        setWalletOrigemById(origemMap);
         setWalletOptions(
           summary.carteiras
             .filter((wallet) => wallet.categoria === 'Investimento')
-            .map((wallet) => ({ id: wallet.id, nome: wallet.nome }))
+            .map((wallet) => ({ id: wallet.id, nome: wallet.nome, origem: wallet.origem }))
         );
       } catch {
         if (isMounted) {
           setWalletNameById({});
+          setWalletOrigemById({});
           setWalletOptions([]);
         }
       }
@@ -114,6 +125,12 @@ const OperacaoBolsa = () => {
   }, [fetchHistory]);
 
   const resolveWalletName = (walletId: string) => walletNameById[walletId] ?? walletId;
+  const resolveWalletCurrency = (walletId: string) => currencyForOrigem(walletOrigemById[walletId]);
+
+  const isEditExteriorBolsa = !!editCarteiraId && resolveWalletCurrency(editCarteiraId) === 'USD';
+  // No Exterior, "editPrecoUnitario" representa o Preço total pago (independente da quantidade fracionada);
+  // no Nacional continua sendo o preço por ação, multiplicado pela quantidade inteira.
+  const editValorBolsa = isEditExteriorBolsa ? editPrecoUnitario : editQuantidade * editPrecoUnitario + editEncargos;
 
   const resetEditForm = () => {
     setEditingOperation(null);
@@ -122,6 +139,7 @@ const OperacaoBolsa = () => {
     setEditCodigoAtivo('');
     setEditQuantidade(0);
     setEditPrecoUnitario(0);
+    setEditIofPercent(0);
     setEditEncargos(0);
     setEditDataLancamento(toDateInputValue());
     setEditDataVencimento(toDateInputValue());
@@ -131,12 +149,15 @@ const OperacaoBolsa = () => {
   };
 
   const handleOpenEdit = (operation: ExchangeTransaction) => {
+    const isExterior = resolveWalletCurrency(operation.carteiraId) === 'USD';
     setEditingOperation(operation);
     setEditCarteiraId(operation.carteiraId);
     setEditLado(operation.lado);
     setEditCodigoAtivo(operation.codigoAtivo);
     setEditQuantidade(operation.quantidade);
-    setEditPrecoUnitario(operation.precoUnitario);
+    // "valor" já é quantidade * precoUnitario (o total pago); no Exterior é isso que exibimos como "Preço".
+    setEditPrecoUnitario(isExterior ? operation.valor : operation.precoUnitario);
+    setEditIofPercent(0); // não é persistido no backend, é apenas informativo durante o preenchimento
     setEditEncargos(operation.encargos);
     setEditDataLancamento(toDateInputValue(new Date(operation.dataLancamento)));
     setEditDataVencimento(
@@ -167,7 +188,11 @@ const OperacaoBolsa = () => {
     }
 
     if (editQuantidade <= 0 || editPrecoUnitario <= 0) {
-      setEditFormError('Quantidade e preço unitário devem ser maiores que zero.');
+      setEditFormError(
+        isEditExteriorBolsa
+          ? 'Quantidade e preço devem ser maiores que zero.'
+          : 'Quantidade e preço unitário devem ser maiores que zero.'
+      );
       return;
     }
 
@@ -179,8 +204,12 @@ const OperacaoBolsa = () => {
         lado: editLado,
         codigoAtivo: editCodigoAtivo.trim().toUpperCase(),
         quantidade: editQuantidade,
-        precoUnitario: editPrecoUnitario,
-        encargos: editEncargos,
+        // No Exterior "editPrecoUnitario" no formulário é o Preço total pago; convertido aqui
+        // para o preço por ação esperado pelo backend, que recalcula valor = quantidade * precoUnitario.
+        precoUnitario: isEditExteriorBolsa
+          ? (editQuantidade > 0 ? editPrecoUnitario / editQuantidade : 0)
+          : editPrecoUnitario,
+        encargos: isEditExteriorBolsa ? 0 : editEncargos,
         efetivada: editEfetivada,
         dataLancamento: toUtcDateTime(editDataLancamento),
         dataVencimento: toUtcDateTime(editDataVencimento),
@@ -240,7 +269,7 @@ const OperacaoBolsa = () => {
                 <td>{operation.codigoAtivo}</td>
                 <td>{operation.quantidade}</td>
                 <td>
-                  <Money value={operation.valorTotal} />
+                  <Money value={operation.valorTotal} currency={resolveWalletCurrency(operation.carteiraId)} />
                 </td>
               </tr>
             ))}
@@ -320,11 +349,14 @@ const OperacaoBolsa = () => {
                 <Layers size={18} className="tx-form__row-icon" />
                 <input
                   type="number"
-                  min={0}
-                  step="0.01"
+                  min={isEditExteriorBolsa ? 0 : 1}
+                  step={isEditExteriorBolsa ? '0.000001' : '1'}
                   placeholder="Quantidade"
                   value={editQuantidade || ''}
-                  onChange={(event) => setEditQuantidade(Number(event.target.value))}
+                  onChange={(event) => {
+                    const raw = Number(event.target.value);
+                    setEditQuantidade(isEditExteriorBolsa ? raw : Math.round(raw));
+                  }}
                 />
               </div>
 
@@ -391,18 +423,40 @@ const OperacaoBolsa = () => {
               <div className="tx-form__row tx-form__row--between">
                 <span className="tx-form__row-label">
                   <CircleDollarSign size={18} className="tx-form__row-icon" />
-                  Preço unitário
+                  {isEditExteriorBolsa ? 'Preço' : 'Preço unitário'}
                 </span>
-                <CurrencyInput className="tx-form__inline-currency" value={editPrecoUnitario} onChange={setEditPrecoUnitario} />
+                <CurrencyInput className="tx-form__inline-currency" value={editPrecoUnitario} onChange={setEditPrecoUnitario} currency={editCarteiraId ? resolveWalletCurrency(editCarteiraId) : 'BRL'} />
               </div>
 
-              <div className="tx-form__row tx-form__row--between">
-                <span className="tx-form__row-label">
-                  <Landmark size={18} className="tx-form__row-icon" />
-                  Encargos
-                </span>
-                <CurrencyInput className="tx-form__inline-currency" value={editEncargos} onChange={setEditEncargos} />
-              </div>
+              {isEditExteriorBolsa ? (
+                <>
+                  <div className="tx-form__row tx-form__row--between">
+                    <span className="tx-form__row-label">
+                      <Landmark size={18} className="tx-form__row-icon" />
+                      IOF (%)
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder="Ex: 1.10"
+                      value={editIofPercent || ''}
+                      onChange={(event) => setEditIofPercent(Number(event.target.value))}
+                    />
+                  </div>
+                  <p className="tx-form__hint">
+                    IOF apenas informativo, não entra no cálculo do valor total.
+                  </p>
+                </>
+              ) : (
+                <div className="tx-form__row tx-form__row--between">
+                  <span className="tx-form__row-label">
+                    <Landmark size={18} className="tx-form__row-icon" />
+                    Encargos
+                  </span>
+                  <CurrencyInput className="tx-form__inline-currency" value={editEncargos} onChange={setEditEncargos} currency={editCarteiraId ? resolveWalletCurrency(editCarteiraId) : 'BRL'} />
+                </div>
+              )}
 
               <div className="tx-form__row tx-form__row--between">
                 <span className="tx-form__row-label">
@@ -410,10 +464,10 @@ const OperacaoBolsa = () => {
                   Valor total
                 </span>
                 <span className="tx-form__total-value">
-                  {(editQuantidade * editPrecoUnitario + editEncargos).toLocaleString('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL',
-                  })}
+                  {formatCurrency(
+                    editValorBolsa,
+                    editCarteiraId ? resolveWalletCurrency(editCarteiraId) : 'BRL'
+                  )}
                 </span>
               </div>
             </div>

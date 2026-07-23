@@ -1,4 +1,5 @@
 import type { InputHTMLAttributes } from 'react';
+import { currencyPrefix, type CurrencyCode } from '@/utils/currency';
 import '@/styles/CurrencyInput.scss';
 
 type NativeInputProps = Omit<
@@ -9,6 +10,7 @@ type NativeInputProps = Omit<
 interface CurrencyInputProps extends NativeInputProps {
   value: number;
   onChange: (value: number) => void;
+  currency?: CurrencyCode;
 }
 
 const formatCurrency = (value: number) =>
@@ -20,10 +22,10 @@ const parseCurrencyDigits = (rawValue: string) => {
   return Number.parseInt(digitsOnly, 10) / 100;
 };
 
-const CurrencyInput = ({ id, className, value, onChange, ...rest }: CurrencyInputProps) => {
+const CurrencyInput = ({ id, className, value, onChange, currency = 'BRL', ...rest }: CurrencyInputProps) => {
   return (
     <div className={`currency-input ${className ?? ''}`}>
-      <span className="currency-input__prefix" aria-hidden="true">R$</span>
+      <span className="currency-input__prefix" aria-hidden="true">{currencyPrefix(currency)}</span>
       <input
         {...rest}
         id={id}

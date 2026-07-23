@@ -1,10 +1,12 @@
 export type WalletType = 'Investimento' | 'Corrente';
 export type WalletFilterType = '-' | WalletType;
+export type WalletOrigin = 'Nacional' | 'Exterior';
 
 export interface Carteira {
   id: string;
   nome: string;
   categoria: string;
+  origem: WalletOrigin;
   saldoInicial: number;
   receitas: number;
   despesas: number;
@@ -16,12 +18,14 @@ export interface Carteira {
 export interface CreateCarteiraRequest {
   nome: string;
   saldoInicial: number;
+  origem: WalletOrigin;
 }
 
 export interface EditCarteiraRequest {
   id: string;
   nome: string;
   categoria: string;
+  origem: WalletOrigin;
 }
 
 export interface RemoveCarteiraRequest {
